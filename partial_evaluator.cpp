@@ -22,7 +22,11 @@ int main() {
 
   assert(topMod->hasDef());
 
-  c->runPasses({"rungenerators","removeconstduplicates","flatten","removeconstduplicates","packconnctions"});
+  c->runPasses({"rungenerators",
+        "removeconstduplicates",
+        "flatten",
+        "removeconstduplicates",
+        "packconnctions"});
 
   ModuleDef* def = topMod->getDef();
 
