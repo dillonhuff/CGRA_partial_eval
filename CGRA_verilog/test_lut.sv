@@ -68,7 +68,8 @@ generate
       end
     end
 
-    assign res[ggg] = lut[{op_c_in, op_b_in[ggg], op_a_in[ggg]}];
+     assign res[ggg] = 0;
+ //lut[{op_c_in, op_b_in[ggg], op_a_in[ggg]}];
   end
 endgenerate
 

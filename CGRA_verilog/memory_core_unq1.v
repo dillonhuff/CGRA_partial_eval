@@ -41,7 +41,9 @@
 //////////////////////////////////////////////////////////////////
 
 
-`define xassert(condition, message) if(condition) begin $display(message); $finish(1); end
+`define xassert(condition, message)
+
+//if(condition) begin $display(message); $finish(1); end
 
 
 // dwidth (_GENESIS2_INHERITANCE_PRIORITY_) = 16
