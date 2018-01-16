@@ -12,6 +12,18 @@
 using namespace CoreIR;
 using namespace std;
 
+std::vector<char> hexToBytes(const std::string& hex) {
+  std::vector<char> bytes;
+
+  for (unsigned int i = 0; i < hex.length(); i += 2) {
+    std::string byteString = hex.substr(i, 2);
+    char byte = (char) strtol(byteString.c_str(), NULL, 16);
+    bytes.push_back(byte);
+  }
+
+  return bytes;
+}
+
 std::vector<std::string> splitString(const std::string& str,
                                      const std::string& delimiter) {
     std::vector<std::string> strings;
@@ -30,7 +42,7 @@ std::vector<std::string> splitString(const std::string& str,
     return strings;
 }
 
-int main() {
+void processTop() {
   Context* c = newContext();
 
   CoreIRLoadLibrary_rtlil(c);
@@ -103,6 +115,47 @@ int main() {
 
   c->runPasses({"clockifyinterface"});
 
+  cout << "Building simulator state for config" << endl;
+
+  SimulatorState state(topMod_conf);
+  state.setClock("self.clk", 0, 1);
+  state.setValue("self.reset", BitVec(1, 0));
+
+  cout << " Done building simulator state" << endl;
+
+  // TODO: Split config into lines
+
+  // TODO: Load simulate config line by line
+
+  // TODO: Partially evaluate the original top module by config
+
+  // TODO: Simulate the partially evaluated circuit
+  deleteContext(c);
+  
+}
+
+BitVector hexStringToBitVector(const std::string& str) {
+  vector<char> addrBytes = hexToBytes(str);
+
+  assert(addrBytes.size() == 4);
+
+  BitVector configAddr(32, 0);
+
+  int offset = 0;
+  for (auto byte : addrBytes) {
+    BitVec tmp(8, byte);
+    for (uint i = 0; i < (uint) tmp.bitLength(); i++) {
+      configAddr.set(offset, tmp.get(i));
+      offset++;
+    }
+  }
+
+  assert(offset == 32);
+
+  return configAddr;
+}
+
+int main() {
   cout << "Loading configuration state" << endl;
 
   std::ifstream configFile("./bitstream/shell_bitstream.bs");
@@ -124,6 +177,9 @@ int main() {
   for (auto line : configLines) {
     auto entries = splitString(line, " ");
 
+    cout << "# of entries == " << entries.size() << endl;
+    cout << "Line = " << line << endl;
+
     assert(entries.size() == 2);
 
     string addrString = entries[0];
@@ -136,8 +192,27 @@ int main() {
     assert(dataString.size() == 8);
 
     // Convert strings to bit vectors
-    BitVector configAddr(32, 0);
-    BitVector configData(32, 0);
+    vector<char> addrBytes = hexToBytes(addrString);
+    assert(addrBytes.size() == 4);
+
+    BitVector configAddr = hexStringToBitVector(addrString);
+
+    // int offset = 0;
+    // for (auto byte : addrBytes) {
+    //   BitVec tmp(8, byte);
+    //   for (uint i = 0; i < (uint) tmp.bitLength(); i++) {
+    //     configAddr.set(offset, tmp.get(i));
+    //     offset++;
+    //   }
+    // }
+
+    // assert(offset == 32);
+
+    //vector<char> dataBytes = hexToBytes(dataString);
+    BitVector configData = hexStringToBitVector(dataString);
+
+    cout << "configAddr = " << configAddr << endl;
+    cout << "configData = " << configData << endl;
 
     configAddrs.push_back(configAddr);
     configDatas.push_back(configData);
@@ -146,20 +221,4 @@ int main() {
   assert(configAddrs.size() == configLines.size());
   assert(configDatas.size() == configLines.size());
 
-  cout << "Building simulator state for config" << endl;
-
-  SimulatorState state(topMod_conf);
-  state.setClock("self.clk", 0, 1);
-  state.setValue("self.reset", BitVec(1, 0));
-
-  cout << " Done building simulator state" << endl;
-
-  // TODO: Split config into lines
-
-  // TODO: Load simulate config line by line
-
-  // TODO: Partially evaluate the original top module by config
-
-  // TODO: Simulate the partially evaluated circuit
-  deleteContext(c);
 }
