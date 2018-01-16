@@ -1,5 +1,9 @@
 #include "coreir.h"
 
+#include <string>
+#include <fstream>
+#include <streambuf>
+
 #include "coreir/libs/rtlil.h"
 #include "coreir/passes/transform/deletedeadinstances.h"
 #include "coreir/passes/transform/unpackconnections.h"
@@ -7,6 +11,24 @@
 
 using namespace CoreIR;
 using namespace std;
+
+std::vector<std::string> splitString(const std::string& str,
+                                     const std::string& delimiter) {
+    std::vector<std::string> strings;
+
+    std::string::size_type pos = 0;
+    std::string::size_type prev = 0;
+    while ((pos = str.find(delimiter, prev)) != std::string::npos)
+    {
+        strings.push_back(str.substr(prev, pos - prev));
+        prev = pos + 1;
+    }
+
+    // To get the last substring (or only, if delimiter is not found)
+    strings.push_back(str.substr(prev));
+
+    return strings;
+}
 
 int main() {
   Context* c = newContext();
@@ -29,6 +51,9 @@ int main() {
         "packconnections"});
 
   cout << "Done with packing connections" << endl;
+
+
+  cout << "# of instances in flattened circuit = " << topMod->getDef()->getInstances().size() << endl;
 
   ModuleDef* def = topMod->getDef();
 
@@ -54,12 +79,19 @@ int main() {
   Module* topMod_conf =
     c->getGlobal()->getModule("topMod_config");
 
-  
   // cout << "topMod_config interface" << endl;
   // cout << topMod_conf->toString() << endl;
 
   assert(topMod_conf != nullptr);
   assert(topMod_conf->hasDef());
+
+  deleteDeadInstances(topMod_conf);
+
+  cout << "# of instances in subcircuit after deleting dead instances = " << topMod_conf->getDef()->getInstances().size() << endl;
+  
+  c->runPasses({"removeconstduplicates", "cullgraph"});
+
+  cout << "# of instances in subcircuit after deleting duplicate constants = " << topMod_conf->getDef()->getInstances().size() << endl;
   
   cout << "Saving the config circuit" << endl;
   if (!saveToFile(c->getGlobal(), "topModConfig.json", topMod_conf)) {
@@ -71,14 +103,6 @@ int main() {
 
   c->runPasses({"clockifyinterface"});
 
-  cout << "Building simulator state for config" << endl;
-
-  SimulatorState state(topMod_conf);
-  state.setClock("self.clk", 0, 1);
-  state.setValue("self.reset", BitVec(1, 0));
-
-  cout << " Done building simulator state" << endl;
-
   cout << "Loading configuration state" << endl;
 
   std::ifstream configFile("./bitstream/shell_bitstream.bs");
@@ -87,6 +111,48 @@ int main() {
 
   cout << "Config file text" << endl;
   cout << str << endl;
+
+  auto configLines = splitString(str, "\n");
+  cout << "Config lines" << endl;
+  for (auto line : configLines) {
+    cout << "\t" << line << endl;
+  }
+
+  vector<BitVector> configDatas;
+  vector<BitVector> configAddrs;
+
+  for (auto line : configLines) {
+    auto entries = splitString(line, " ");
+
+    assert(entries.size() == 2);
+
+    string addrString = entries[0];
+    string dataString = entries[1];
+
+    cout << "addr string = " << addrString << endl;
+    cout << "data string = " << dataString << endl;
+
+    assert(addrString.size() == 8);
+    assert(dataString.size() == 8);
+
+    // Convert strings to bit vectors
+    BitVector configAddr(32, 0);
+    BitVector configData(32, 0);
+
+    configAddrs.push_back(configAddr);
+    configDatas.push_back(configData);
+  }
+
+  assert(configAddrs.size() == configLines.size());
+  assert(configDatas.size() == configLines.size());
+
+  cout << "Building simulator state for config" << endl;
+
+  SimulatorState state(topMod_conf);
+  state.setClock("self.clk", 0, 1);
+  state.setValue("self.reset", BitVec(1, 0));
+
+  cout << " Done building simulator state" << endl;
 
   // TODO: Split config into lines
 
