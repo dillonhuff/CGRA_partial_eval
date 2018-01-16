@@ -131,138 +131,138 @@ logic                 res_p_w;
 logic [15:0] inp_code;
 logic [15:0] op_code;
 
-// always_ff @(posedge clk or negedge rst_n) begin
-//   // if(~rst_n) begin
-//   //   inp_code <= 'h0;
-//   //   op_code  <= 'h0;
-//   //end else if(cfg_en && (&cfg_a)) begin
-//    if(cfg_en && (&cfg_a)) begin
-//     inp_code <= cfg_d[31:16];
-//     op_code  <= cfg_d[15:0];
-//   end
-// end
+always_ff @(posedge clk or negedge rst_n) begin
+  // if(~rst_n) begin
+  //   inp_code <= 'h0;
+  //   op_code  <= 'h0;
+  //end else if(cfg_en && (&cfg_a)) begin
+   if(cfg_en && (&cfg_a)) begin
+    inp_code <= cfg_d[31:16];
+    op_code  <= cfg_d[15:0];
+  end
+end
 
-// logic [15:0] nc_inp_code;
-// assign nc_inp_code = inp_code;
-// logic [15:0] nc_op_code;
-// assign nc_op_code = op_code;
+logic [15:0] nc_inp_code;
+assign nc_inp_code = inp_code;
+logic [15:0] nc_op_code;
+assign nc_op_code = op_code;
 
-// test_opt_reg #(.DataWidth(DataWidth)) test_opt_reg_a
-// (
-//   .clk        (clk),
-//   .clk_en     (clk_en),
-//   .rst_n      (rst_n),
-//   .load       (cfg_en && (cfg_a == 8'hF0)),
-//   .val        (cfg_d[DataWidth-1:0]),
-//   .mode       (inp_code[1:0]),
-//   .data_in    (data0),//op_a_in),
-//   .res        (op_a)
-// );
-
-
-// logic                 op_b_ld;
-// logic [DataWidth-1:0] op_b_val;
-
-//   assign op_b_ld  = cfg_en && (cfg_a == 8'hF1);
-//   assign op_b_val = cfg_d[DataWidth-1:0];
+test_opt_reg #(.DataWidth(DataWidth)) test_opt_reg_a
+(
+  .clk        (clk),
+  .clk_en     (clk_en),
+  .rst_n      (rst_n),
+  .load       (cfg_en && (cfg_a == 8'hF0)),
+  .val        (cfg_d[DataWidth-1:0]),
+  .mode       (inp_code[1:0]),
+  .data_in    (data0),//op_a_in),
+  .res        (op_a)
+);
 
 
-// test_opt_reg #(.DataWidth(DataWidth)) test_opt_reg_b
-// (
-//   .clk        (clk),
-//   .clk_en     (clk_en),
-//   .rst_n      (rst_n),
-//   .load       (op_b_ld),
-//   .val        (op_b_val),
-//   .mode       (inp_code[3:2]),
-//   .data_in    (data1),//op_b_in),
-//   .res        (op_b)
-// );
+logic                 op_b_ld;
+logic [DataWidth-1:0] op_b_val;
+
+  assign op_b_ld  = cfg_en && (cfg_a == 8'hF1);
+  assign op_b_val = cfg_d[DataWidth-1:0];
 
 
-
-
-// test_opt_reg #(.DataWidth(1)) test_opt_reg_d
-// (
-//   .clk        (clk),
-//   .clk_en     (clk_en),
-//   .rst_n      (rst_n),
-//   .load       (cfg_en && (cfg_a == 8'hF3)),
-//   .val        (cfg_d[0]),
-//   .mode       (inp_code[9:8]),
-//   .data_in    (bit0),//op_d_p_in),
-//   .res        (op_d_p)
-// );
-
-
-// test_opt_reg #(.DataWidth(1)) test_opt_reg_e
-// (
-//   .clk        (clk),
-//   .clk_en     (clk_en),
-//   .rst_n      (rst_n),
-//   .load       (cfg_en && (cfg_a == 8'hF4)),
-//   .val        (cfg_d[0]),
-//   .mode       (inp_code[11:10]),
-//   .data_in    (bit1),//op_e_p_in),
-//   .res        (op_e_p)
-// );
-
-
-// test_opt_reg #(.DataWidth(1)) test_opt_reg_f
-// (
-//   .clk        (clk),
-//   .clk_en     (clk_en),
-//   .rst_n      (rst_n),
-//   .load       (cfg_en && (cfg_a == 8'hF5)),
-//   .val        (cfg_d[0]),
-//   .mode       (inp_code[13:12]),
-//   .data_in    (bit2),//op_f_p_in),
-//   .res        (op_f_p)
-// );
+test_opt_reg #(.DataWidth(DataWidth)) test_opt_reg_b
+(
+  .clk        (clk),
+  .clk_en     (clk_en),
+  .rst_n      (rst_n),
+  .load       (op_b_ld),
+  .val        (op_b_val),
+  .mode       (inp_code[3:2]),
+  .data_in    (data1),//op_b_in),
+  .res        (op_b)
+);
 
 
 
 
+test_opt_reg #(.DataWidth(1)) test_opt_reg_d
+(
+  .clk        (clk),
+  .clk_en     (clk_en),
+  .rst_n      (rst_n),
+  .load       (cfg_en && (cfg_a == 8'hF3)),
+  .val        (cfg_d[0]),
+  .mode       (inp_code[9:8]),
+  .data_in    (bit0),//op_d_p_in),
+  .res        (op_d_p)
+);
 
-// test_pe_comp_unq1  test_pe_comp
-// (
-//   .op_code (op_code[8:0]),
 
-//   .op_a     (op_a),
-//   .op_b     (op_b),
-//   .op_d_p   (op_d_p),
+test_opt_reg #(.DataWidth(1)) test_opt_reg_e
+(
+  .clk        (clk),
+  .clk_en     (clk_en),
+  .rst_n      (rst_n),
+  .load       (cfg_en && (cfg_a == 8'hF4)),
+  .val        (cfg_d[0]),
+  .mode       (inp_code[11:10]),
+  .data_in    (bit1),//op_e_p_in),
+  .res        (op_e_p)
+);
+
+
+test_opt_reg #(.DataWidth(1)) test_opt_reg_f
+(
+  .clk        (clk),
+  .clk_en     (clk_en),
+  .rst_n      (rst_n),
+  .load       (cfg_en && (cfg_a == 8'hF5)),
+  .val        (cfg_d[0]),
+  .mode       (inp_code[13:12]),
+  .data_in    (bit2),//op_f_p_in),
+  .res        (op_f_p)
+);
 
 
 
 
 
-//   .res      (comp_res),
-//   .res_p    (comp_res_p)
-// );
+test_pe_comp_unq1  test_pe_comp
+(
+  .op_code (op_code[8:0]),
 
-// logic res_lut;
-
-
-// test_lut #(.DataWidth(1)) test_lut
-// (
-//   .cfg_clk  (clk),
-//   .cfg_rst_n(rst_n),
-//   .cfg_d    (cfg_d),
-//   .cfg_a    (cfg_a),
-//   .cfg_en   (cfg_en),
-
-//   .op_a_in  (op_d_p),
-//   .op_b_in  (op_e_p),
-//   .op_c_in  (op_f_p),
-
-//   .res      (res_lut)
-// );
-
-//   assign res_p_w = op_code[8] ? res_lut : comp_res_p;
+  .op_a     (op_a),
+  .op_b     (op_b),
+  .op_d_p   (op_d_p),
 
 
-//   assign res   = comp_res;
-//   assign res_p = res_p_w;
+
+
+
+  .res      (comp_res),
+  .res_p    (comp_res_p)
+);
+
+logic res_lut;
+
+
+test_lut #(.DataWidth(1)) test_lut
+(
+  .cfg_clk  (clk),
+  .cfg_rst_n(rst_n),
+  .cfg_d    (cfg_d),
+  .cfg_a    (cfg_a),
+  .cfg_en   (cfg_en),
+
+  .op_a_in  (op_d_p),
+  .op_b_in  (op_e_p),
+  .op_c_in  (op_f_p),
+
+  .res      (res_lut)
+);
+
+  assign res_p_w = op_code[8] ? res_lut : comp_res_p;
+
+
+  assign res   = comp_res;
+  assign res_p = res_p_w;
 
 endmodule
 
