@@ -43,7 +43,7 @@ std::vector<std::string> splitString(const std::string& str,
 }
 
 void processTop(const std::string& fileName,
-                const std::vector<Wireable*>& subCircuitPorts) {
+                const std::string& topModName) {
   Context* c = newContext();
 
   CoreIRLoadLibrary_rtlil(c);
@@ -54,6 +54,9 @@ void processTop(const std::string& fileName,
     cout << "Could not Load from json!!" << endl;
     c->die();
   }
+
+  topMod = c->getGlobal()->getModule(topModName);
+  c->setTop(topMod);
 
   assert(topMod->hasDef());
 
@@ -70,12 +73,13 @@ void processTop(const std::string& fileName,
 
   ModuleDef* def = topMod->getDef();
 
-  // Extract the configuration subcircuit
-  // vector<Wireable*> subCircuitPorts{def->sel("self")->sel("config_addr"),
-  //     def->sel("self")->sel("config_data"),
-  //     def->sel("self")->sel("clk"),
-  //     def->sel("self")->sel("reset")};
-
+  // TODO: Pass in port path names
+  vector<Wireable*> subCircuitPorts{def->sel("self")->sel("config_addr"),
+      def->sel("self")->sel("config_data"),
+      def->sel("self")->sel("clk"),
+      def->sel("self")->sel("reset"),
+      def->sel("self")->sel("tile_id")};
+  
   auto subCircuitInstances =
     extractSubcircuit(topMod, subCircuitPorts);
 
@@ -102,15 +106,15 @@ void processTop(const std::string& fileName,
 
   cout << "# of instances in subcircuit after deleting dead instances = " << topMod_conf->getDef()->getInstances().size() << endl;
   
-  c->runPasses({"removeconstduplicates", "cullgraph"});
+  c->runPasses({"removeconstduplicates"}); //, "cullgraph"});
 
   cout << "# of instances in subcircuit after deleting duplicate constants = " << topMod_conf->getDef()->getInstances().size() << endl;
   
-  cout << "Saving the config circuit" << endl;
-  if (!saveToFile(c->getGlobal(), "topModConfig.json", topMod_conf)) {
-    cout << "Could not save to json!!" << endl;
-    c->die();
-  }
+  // cout << "Saving the config circuit" << endl;
+  // if (!saveToFile(c->getGlobal(), "topModConfig.json", topMod_conf)) {
+  //   cout << "Could not save to json!!" << endl;
+  //   c->die();
+  // }
 
   cout << "Clockifying the configuration circuit interface" << endl;
 
@@ -221,4 +225,9 @@ BitStreamConfig loadConfig(const std::string& configFileName) {
 }
 
 int main() {
+
+  string modName = "pe_tile_new_unq1";
+  string fileName = "__DOLLAR__paramod__BACKSLASH__test_mult_add__BACKSLASH__DataWidth__EQUALS__16.json";
+
+  processTop(fileName, modName);
 }
