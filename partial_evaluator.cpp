@@ -139,6 +139,8 @@ BitVector hexStringToBitVector(const std::string& str) {
 
   assert(addrBytes.size() == 4);
 
+  reverse(addrBytes);
+
   BitVector configAddr(32, 0);
 
   int offset = 0;
