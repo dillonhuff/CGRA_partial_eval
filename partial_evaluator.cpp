@@ -42,14 +42,15 @@ std::vector<std::string> splitString(const std::string& str,
     return strings;
 }
 
-void processTop() {
+void processTop(const std::string& fileName,
+                const std::vector<Wireable*>& subCircuitPorts) {
   Context* c = newContext();
 
   CoreIRLoadLibrary_rtlil(c);
 
   Module* topMod = nullptr;
 
-  if (!loadFromFile(c, "top.json", &topMod)) {
+  if (!loadFromFile(c, fileName, &topMod)) {
     cout << "Could not Load from json!!" << endl;
     c->die();
   }
@@ -70,10 +71,10 @@ void processTop() {
   ModuleDef* def = topMod->getDef();
 
   // Extract the configuration subcircuit
-  vector<Wireable*> subCircuitPorts{def->sel("self")->sel("config_addr"),
-      def->sel("self")->sel("config_data"),
-      def->sel("self")->sel("clk"),
-      def->sel("self")->sel("reset")};
+  // vector<Wireable*> subCircuitPorts{def->sel("self")->sel("config_addr"),
+  //     def->sel("self")->sel("config_data"),
+  //     def->sel("self")->sel("clk"),
+  //     def->sel("self")->sel("reset")};
 
   auto subCircuitInstances =
     extractSubcircuit(topMod, subCircuitPorts);
@@ -157,10 +158,16 @@ BitVector hexStringToBitVector(const std::string& str) {
   return configAddr;
 }
 
-int main() {
+struct BitStreamConfig {
+  vector<BitVector> configAddrs;
+  vector<BitVector> configDatas;
+};
+
+BitStreamConfig loadConfig(const std::string& configFileName) {
   cout << "Loading configuration state" << endl;
 
-  std::ifstream configFile("./bitstream/shell_bitstream.bs");
+  //configFile("./bitstream/shell_bitstream.bs")
+  std::ifstream configFile(configFileName);
   std::string str((std::istreambuf_iterator<char>(configFile)),
                   std::istreambuf_iterator<char>());
 
@@ -198,19 +205,6 @@ int main() {
     assert(addrBytes.size() == 4);
 
     BitVector configAddr = hexStringToBitVector(addrString);
-
-    // int offset = 0;
-    // for (auto byte : addrBytes) {
-    //   BitVec tmp(8, byte);
-    //   for (uint i = 0; i < (uint) tmp.bitLength(); i++) {
-    //     configAddr.set(offset, tmp.get(i));
-    //     offset++;
-    //   }
-    // }
-
-    // assert(offset == 32);
-
-    //vector<char> dataBytes = hexToBytes(dataString);
     BitVector configData = hexStringToBitVector(dataString);
 
     cout << "configAddr = " << configAddr << endl;
@@ -223,4 +217,8 @@ int main() {
   assert(configAddrs.size() == configLines.size());
   assert(configDatas.size() == configLines.size());
 
+  return {configAddrs, configDatas};
+}
+
+int main() {
 }
