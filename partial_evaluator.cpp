@@ -227,7 +227,8 @@ BitStreamConfig loadConfig(const std::string& configFileName) {
 int main() {
 
   string modName = "pe_tile_new_unq1";
-  string fileName = "__DOLLAR__paramod__BACKSLASH__test_mult_add__BACKSLASH__DataWidth__EQUALS__16.json";
+  // NOTE: Must change every time yosys is run!
+  string fileName = "__DOLLAR__paramod__BACKSLASH__test_lut__BACKSLASH__DataWidth__EQUALS__1.json";
 
   processTop(fileName, modName);
 }

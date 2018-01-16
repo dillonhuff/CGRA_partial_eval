@@ -131,7 +131,7 @@ logic                 res_p_w;
 logic [15:0] inp_code;
 logic [15:0] op_code;
 
-always_ff @(posedge clk or negedge rst_n) begin
+always_ff @(posedge clk) begin // or negedge rst_n) begin
   // if(~rst_n) begin
   //   inp_code <= 'h0;
   //   op_code  <= 'h0;
