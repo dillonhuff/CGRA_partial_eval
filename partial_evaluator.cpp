@@ -77,8 +77,8 @@ void processTop(const std::string& fileName,
   vector<Wireable*> subCircuitPorts{def->sel("self")->sel("config_addr"),
       def->sel("self")->sel("config_data"),
       def->sel("self")->sel("clk"),
-      def->sel("self")->sel("reset"),
-      def->sel("self")->sel("tile_id")};
+      def->sel("self")->sel("reset")};
+      //def->sel("self")->sel("tile_id")};
   
   auto subCircuitInstances =
     extractSubcircuit(topMod, subCircuitPorts);
@@ -118,7 +118,7 @@ void processTop(const std::string& fileName,
 
   cout << "Clockifying the configuration circuit interface" << endl;
 
-  c->runPasses({"clockifyinterface"});
+  //c->runPasses({"clockifyinterface"});
 
   cout << "Building simulator state for config" << endl;
 
@@ -127,8 +127,6 @@ void processTop(const std::string& fileName,
   state.setValue("self.reset", BitVec(1, 0));
 
   cout << " Done building simulator state" << endl;
-
-  // TODO: Split config into lines
 
   // TODO: Load simulate config line by line
 
@@ -226,9 +224,10 @@ BitStreamConfig loadConfig(const std::string& configFileName) {
 
 int main() {
 
-  string modName = "pe_tile_new_unq1";
+  string modName = "top"; //"pe_tile_new_unq1";
   // NOTE: Must change every time yosys is run!
-  string fileName = "__DOLLAR__paramod__BACKSLASH__test_lut__BACKSLASH__DataWidth__EQUALS__1.json";
+  string fileName = "top.json"; //"__DOLLAR__paramod__BACKSLASH__test_lut__BACKSLASH__DataWidth__EQUALS__1.json";
 
   processTop(fileName, modName);
+
 }

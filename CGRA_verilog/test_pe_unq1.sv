@@ -131,11 +131,12 @@ logic                 res_p_w;
 logic [15:0] inp_code;
 logic [15:0] op_code;
 
-always_ff @(posedge clk or negedge rst_n) begin
-  if(~rst_n) begin
-    inp_code <= 'h0;
-    op_code  <= 'h0;
-  end else if(cfg_en && (&cfg_a)) begin
+always_ff @(posedge clk) begin // or negedge rst_n) begin
+  // if(~rst_n) begin
+  //   inp_code <= 'h0;
+  //   op_code  <= 'h0;
+  // end else if(cfg_en && (&cfg_a)) begin
+   if(cfg_en && (&cfg_a)) begin
     inp_code <= cfg_d[31:16];
     op_code  <= cfg_d[15:0];
   end

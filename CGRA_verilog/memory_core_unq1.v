@@ -130,7 +130,8 @@ reg out_delay;
 reg mv_to_ram;
 reg mv_to_out;
 
-assign gclk = clk & (config_mem[2]==1'b1);
+   assign gclk = clk;
+// & (config_mem[2]==1'b1);
 assign data_in = (config_mem[19]==1'b1)?chain_in:xdata_in;
 
 assign fifo_depth = config_mem[15:3];
