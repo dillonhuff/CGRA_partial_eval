@@ -222,7 +222,6 @@ void processTop(const std::string& fileName,
 
     state.execute();
     state.execute();
-    
   }
 
   cout << "Done simulating config" << endl;
@@ -250,6 +249,53 @@ void processTop(const std::string& fileName,
   
 }
 
+void simulateConfig(const std::string& fileName) {
+
+  Context* c = newContext();
+
+  CoreIRLoadLibrary_rtlil(c);
+
+  Module* topMod_conf = nullptr;
+
+  if (!loadFromFile(c, fileName, &topMod_conf)) {
+    cout << "Could not Load from json!!" << endl;
+    c->die();
+  }
+
+  assert(topMod_conf->hasDef());
+
+  c->runPasses({"clockifyinterface"});
+
+  if (!saveToFile(c->getGlobal(), "topModConfigClock.json", topMod_conf)) {
+    cout << "Could not save to json!!" << endl;
+    c->die();
+  }
+  
+  cout << "Building simulator state for config" << endl;
+
+  SimulatorState state(topMod_conf);
+  state.setClock("self.clk", 0, 1);
+  state.setValue("self.reset", BitVec(1, 0));
+
+  cout << " Done building simulator state" << endl;
+
+  BitStreamConfig bs = loadConfig("./bitstream/shell_bitstream.bs");
+  for (uint i = 0; i < bs.configAddrs.size(); i++) {
+    cout << "Simulating config " << i << endl;
+    state.setValue("self.config_addr", bs.configAddrs[i]);
+    state.setValue("self.config_data", bs.configDatas[i]);
+
+    state.execute();
+    state.execute();
+    
+  }
+
+  cout << "Done simulating config" << endl;
+
+  deleteContext(c);
+  
+}
+
 int main() {
 
   string modName = "top"; //"pe_tile_new_unq1";
@@ -257,5 +303,8 @@ int main() {
   string fileName = "top.json"; //"__DOLLAR__paramod__BACKSLASH__test_lut__BACKSLASH__DataWidth__EQUALS__1.json";
 
   processTop(fileName, modName);
+
+  //simulateConfig("topModConfig.json");
+  
 
 }
