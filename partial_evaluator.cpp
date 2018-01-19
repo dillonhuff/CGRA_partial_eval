@@ -317,7 +317,9 @@ void simulateConfig(const std::string& configFileName,
 
   cout << "# of instances partially evaluated top after deleting dead instances = " << wholeTopMod->getDef()->getInstances().size() << endl;
 
-  unpackConnections(wholeTopMod);
+  // NOTE: I would like to get rid of this line, but I'm not sure that can be done
+  // safely.
+  // unpackConnections(wholeTopMod);
 
   cout << "Folding constants" << endl;
   foldConstants(wholeTopMod);
@@ -328,8 +330,7 @@ void simulateConfig(const std::string& configFileName,
 
   cout << "# of instances partially evaluated top after constant folding = " << wholeTopMod->getDef()->getInstances().size() << endl;
 
-  c->runPasses({"packconnections"});
-
+  //c->runPasses({"packconnections"});
 
   c->setTop(wholeTopMod);
 
@@ -338,18 +339,6 @@ void simulateConfig(const std::string& configFileName,
     cout << "Could not save to json!!" << endl;
     c->die();
   }
-  
-  // cout << "miniChip partially evaluated instances" << endl;
-  // for (auto instR : miniChip->getDef()->getInstances()) {
-  //   cout << "\t" << instR.second->toString() << endl;
-  // }
-
-  // cout << "miniChip partially evaluated connections" << endl;
-  // for (auto conn : miniChip->getDef()->getConnections()) {
-  //   cout << "\t" << conn.first->toString() << " <-> " << conn.second->toString() << endl;
-  // }
-
-  // assert(miniChip->getDef()->getInstances().size() == 2);
   
   deleteContext(c);
   
