@@ -301,9 +301,9 @@ void simulateConfig(const std::string& configFileName,
   }
 
   c->runPasses({"rungenerators",
-        //"removeconstduplicates",
         "flatten",
-        //"removeconstduplicates",
+        "cullzexts",
+        "removeconstduplicates",
         "packconnections"});
 
 
