@@ -202,51 +202,7 @@ void processTop(const std::string& fileName,
     c->die();
   }
 
-  cout << "Clockifying the configuration circuit interface" << endl;
-
-  c->runPasses({"clockifyinterface"});
-
-  cout << "Building simulator state for config" << endl;
-
-  SimulatorState state(topMod_conf);
-  state.setClock("self.clk", 0, 1);
-  state.setValue("self.reset", BitVec(1, 0));
-
-  cout << " Done building simulator state" << endl;
-
-  BitStreamConfig bs = loadConfig("./bitstream/shell_bitstream.bs");
-  for (uint i = 0; i < bs.configAddrs.size(); i++) {
-    cout << "Simulating config " << i << endl;
-    state.setValue("self.config_addr", bs.configAddrs[i]);
-    state.setValue("self.config_data", bs.configDatas[i]);
-
-    state.execute();
-    state.execute();
-  }
-
-  cout << "Done simulating config" << endl;
-  // registersToConstants(miniChip, state.getCircStates().back().registers);
-  // deleteDeadInstances(miniChip);
-  // unpackConnections(miniChip);
-  // foldConstants(miniChip);
-  // deleteDeadInstances(miniChip);
-
-  // c->runPasses({"packconnections"});
-
-  // cout << "miniChip partially evaluated instances" << endl;
-  // for (auto instR : miniChip->getDef()->getInstances()) {
-  //   cout << "\t" << instR.second->toString() << endl;
-  // }
-
-  // cout << "miniChip partially evaluated connections" << endl;
-  // for (auto conn : miniChip->getDef()->getConnections()) {
-  //   cout << "\t" << conn.first->toString() << " <-> " << conn.second->toString() << endl;
-  // }
-
-  // assert(miniChip->getDef()->getInstances().size() == 2);
-  
   deleteContext(c);
-  
 }
 
 void simulateConfig(const std::string& configFileName,
@@ -301,6 +257,7 @@ void simulateConfig(const std::string& configFileName,
   }
 
   c->runPasses({"rungenerators",
+        // TODO: Maybe pack connections here to help with inlining speed?
         "flatten",
         "cullzexts",
         "removeconstduplicates",
@@ -339,8 +296,27 @@ void simulateConfig(const std::string& configFileName,
     cout << "Could not save to json!!" << endl;
     c->die();
   }
-  
+
   deleteContext(c);
+}
+
+void simulateConfiguredState(const std::string& fileName) {
+
+  Context* c = newContext();
+
+  CoreIRLoadLibrary_rtlil(c);
+
+  Module* topMod = nullptr;
+
+  if (!loadFromFile(c, fileName, &topMod)) {
+    cout << "Could not Load from json!!" << endl;
+    c->die();
+  }
+
+  assert(topMod->hasDef());
+
+  c->runPasses({"clockifyinterface"});
+
   
 }
 
@@ -352,7 +328,6 @@ int main() {
 
   //processTop(fileName, modName);
 
-  simulateConfig("topModConfig.json", "top.json");
-  
-
+  //simulateConfig("topModConfig.json", "top.json");
+  simulateConfiguredState("partialEvalTopMod.json");
 }
