@@ -313,11 +313,20 @@ void simulateConfiguredState(const std::string& fileName) {
     c->die();
   }
 
+  vector<Wireable*> subCircuitPorts{def->sel("self")->sel("clk"),
+      def->sel("self")->sel("reset")};
+      //def->sel("self")->sel("tile_id")};
+  
+  auto subCircuitInstances =
+    extractSubcircuit(topMod, subCircuitPorts);
+  
   assert(topMod->hasDef());
 
   c->runPasses({"clockifyinterface"});
 
   
+
+  deleteContext(c);
 }
 
 int main() {

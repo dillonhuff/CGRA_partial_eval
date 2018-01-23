@@ -123,8 +123,8 @@ logic [8:0]        nc_op_code;
 assign             nc_op_code = op_code;
 
 
-logic [DATA_MSB:0] res_w;
-logic              res_p_w;
+wire [DATA_MSB:0] res_w;
+wire              res_p_w;
 
 logic                 is_signed;
 //logic                 dual_mode;

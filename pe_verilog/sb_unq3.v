@@ -212,7 +212,7 @@ config_en
         3'd2: out_0_0_i = in_3_0;
         3'd3: out_0_0_i = pe_output_0;
 
-        3'd4: out_0_0_i = pe_output_1;
+        3'd4: out_0_0_i = pe_output_1; default: pe_output_1;
 
     endcase
   end
@@ -229,7 +229,7 @@ config_en
         3'd2: out_0_1_i = in_3_1;
         3'd3: out_0_1_i = pe_output_0;
 
-        3'd4: out_0_1_i = pe_output_1;
+        3'd4: out_0_1_i = pe_output_1; default: pe_output_1;
 
     endcase
   end
@@ -246,7 +246,7 @@ config_en
         3'd2: out_0_2_i = in_3_2;
         3'd3: out_0_2_i = pe_output_0;
 
-        3'd4: out_0_2_i = pe_output_1;
+        3'd4: out_0_2_i = pe_output_1; default: pe_output_1;
 
     endcase
   end
@@ -263,7 +263,7 @@ config_en
         3'd2: out_0_3_i = in_3_3;
         3'd3: out_0_3_i = pe_output_0;
 
-        3'd4: out_0_3_i = pe_output_1;
+        3'd4: out_0_3_i = pe_output_1; default: pe_output_1;
 
     endcase
   end
@@ -280,7 +280,7 @@ config_en
         3'd2: out_0_4_i = in_3_4;
         3'd3: out_0_4_i = pe_output_0;
 
-        3'd4: out_0_4_i = pe_output_1;
+        3'd4: out_0_4_i = pe_output_1; default: pe_output_1;
 
     endcase
   end
@@ -297,7 +297,7 @@ config_en
         3'd2: out_1_0_i = in_3_0;
         3'd3: out_1_0_i = pe_output_0;
 
-        3'd4: out_1_0_i = pe_output_1;
+        3'd4: out_1_0_i = pe_output_1; default: pe_output_1;
 
     endcase
   end
@@ -314,7 +314,7 @@ config_en
         3'd2: out_1_1_i = in_3_1;
         3'd3: out_1_1_i = pe_output_0;
 
-        3'd4: out_1_1_i = pe_output_1;
+        3'd4: out_1_1_i = pe_output_1; default: pe_output_1;
 
     endcase
   end
@@ -331,7 +331,7 @@ config_en
         3'd2: out_1_2_i = in_3_2;
         3'd3: out_1_2_i = pe_output_0;
 
-        3'd4: out_1_2_i = pe_output_1;
+        3'd4: out_1_2_i = pe_output_1; default: pe_output_1;
 
     endcase
   end
@@ -348,7 +348,7 @@ config_en
         3'd2: out_1_3_i = in_3_3;
         3'd3: out_1_3_i = pe_output_0;
 
-        3'd4: out_1_3_i = pe_output_1;
+        3'd4: out_1_3_i = pe_output_1; default: pe_output_1;
 
     endcase
   end
@@ -365,7 +365,7 @@ config_en
         3'd2: out_1_4_i = in_3_4;
         3'd3: out_1_4_i = pe_output_0;
 
-        3'd4: out_1_4_i = pe_output_1;
+        3'd4: out_1_4_i = pe_output_1; default: pe_output_1;
 
     endcase
   end
@@ -382,7 +382,7 @@ config_en
         3'd2: out_2_0_i = in_3_0;
         3'd3: out_2_0_i = pe_output_0;
 
-        3'd4: out_2_0_i = pe_output_1;
+        3'd4: out_2_0_i = pe_output_1; default: pe_output_1;
 
     endcase
   end
@@ -399,7 +399,7 @@ config_en
         3'd2: out_2_1_i = in_3_1;
         3'd3: out_2_1_i = pe_output_0;
 
-        3'd4: out_2_1_i = pe_output_1;
+        3'd4: out_2_1_i = pe_output_1; default: pe_output_1;
 
     endcase
   end
@@ -416,7 +416,7 @@ config_en
         3'd2: out_2_2_i = in_3_2;
         3'd3: out_2_2_i = pe_output_0;
 
-        3'd4: out_2_2_i = pe_output_1;
+        3'd4: out_2_2_i = pe_output_1; default: pe_output_1;
 
     endcase
   end
@@ -433,7 +433,7 @@ config_en
         3'd2: out_2_3_i = in_3_3;
         3'd3: out_2_3_i = pe_output_0;
 
-        3'd4: out_2_3_i = pe_output_1;
+        3'd4: out_2_3_i = pe_output_1; default: pe_output_1;
 
     endcase
   end
@@ -450,7 +450,7 @@ config_en
         3'd2: out_2_4_i = in_3_4;
         3'd3: out_2_4_i = pe_output_0;
 
-        3'd4: out_2_4_i = pe_output_1;
+        3'd4: out_2_4_i = pe_output_1; default: pe_output_1;
 
     endcase
   end
@@ -467,7 +467,7 @@ config_en
         3'd2: out_3_0_i = in_2_0;
         3'd3: out_3_0_i = pe_output_0;
 
-        3'd4: out_3_0_i = pe_output_1;
+        3'd4: out_3_0_i = pe_output_1; default: pe_output_1;
 
     endcase
   end
@@ -484,7 +484,7 @@ config_en
         3'd2: out_3_1_i = in_2_1;
         3'd3: out_3_1_i = pe_output_0;
 
-        3'd4: out_3_1_i = pe_output_1;
+        3'd4: out_3_1_i = pe_output_1; default: pe_output_1;
 
     endcase
   end
@@ -501,7 +501,7 @@ config_en
         3'd2: out_3_2_i = in_2_2;
         3'd3: out_3_2_i = pe_output_0;
 
-        3'd4: out_3_2_i = pe_output_1;
+        3'd4: out_3_2_i = pe_output_1; default: pe_output_1;
 
     endcase
   end
@@ -518,7 +518,7 @@ config_en
         3'd2: out_3_3_i = in_2_3;
         3'd3: out_3_3_i = pe_output_0;
 
-        3'd4: out_3_3_i = pe_output_1;
+        3'd4: out_3_3_i = pe_output_1; default: pe_output_1;
 
     endcase
   end
@@ -535,7 +535,7 @@ config_en
         3'd2: out_3_4_i = in_2_4;
         3'd3: out_3_4_i = pe_output_0;
 
-        3'd4: out_3_4_i = pe_output_1;
+        3'd4: out_3_4_i = pe_output_1; default: pe_output_1;
 
     endcase
   end
