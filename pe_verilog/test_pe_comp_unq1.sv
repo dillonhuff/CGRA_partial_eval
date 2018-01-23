@@ -123,8 +123,8 @@ logic [8:0]        nc_op_code;
 assign             nc_op_code = op_code;
 
 
-wire [DATA_MSB:0] res_w;
-wire              res_p_w;
+logic [DATA_MSB:0] res_w;
+logic              res_p_w;
 
 logic                 is_signed;
 //logic                 dual_mode;
@@ -140,8 +140,8 @@ logic [DATA_MSB:0]  add_a     [ADD_MSB:0];
 logic [DATA_MSB:0]  add_b     [ADD_MSB:0];
 logic               add_c_in  [ADD_MSB:0];
 
-logic [DATA_MSB:0]  add_res   [ADD_MSB:0];
-logic               add_c_out [ADD_MSB:0];
+wire [DATA_MSB:0]  add_res   [ADD_MSB:0];
+wire               add_c_out [ADD_MSB:0];
 
 
 genvar ggg;
