@@ -149,6 +149,7 @@ void processTop(const std::string& fileName,
         //"removeconstduplicates",
         "flatten",
         //"removeconstduplicates",
+        "cullzexts",
         "packconnections"});
 
   cout << "Done with packing connections" << endl;
@@ -162,8 +163,8 @@ void processTop(const std::string& fileName,
   vector<Wireable*> subCircuitPorts{def->sel("self")->sel("config_addr"),
       def->sel("self")->sel("config_data"),
       def->sel("self")->sel("clk"),
-      def->sel("self")->sel("reset")};
-      //def->sel("self")->sel("tile_id")};
+      def->sel("self")->sel("reset"),
+      def->sel("self")->sel("tile_id")};
   
   auto subCircuitInstances =
     extractSubcircuit(topMod, subCircuitPorts);
@@ -313,12 +314,12 @@ void simulateConfiguredState(const std::string& fileName) {
     c->die();
   }
 
-  vector<Wireable*> subCircuitPorts{def->sel("self")->sel("clk"),
-      def->sel("self")->sel("reset")};
-      //def->sel("self")->sel("tile_id")};
+  // vector<Wireable*> subCircuitPorts{def->sel("self")->sel("clk"),
+  //     def->sel("self")->sel("reset")};
+  //     //def->sel("self")->sel("tile_id")};
   
-  auto subCircuitInstances =
-    extractSubcircuit(topMod, subCircuitPorts);
+  // auto subCircuitInstances =
+  //   extractSubcircuit(topMod, subCircuitPorts);
   
   assert(topMod->hasDef());
 
@@ -335,8 +336,8 @@ int main() {
   // NOTE: Must change every time yosys is run!
   string fileName = "top.json"; //"__DOLLAR__paramod__BACKSLASH__test_lut__BACKSLASH__DataWidth__EQUALS__1.json";
 
-  //processTop(fileName, modName);
+  processTop("pe_tile_new_unq1.json", "pe_tile_new_unq1");
 
   //simulateConfig("topModConfig.json", "top.json");
-  simulateConfiguredState("partialEvalTopMod.json");
+  //simulateConfiguredState("partialEvalTopMod.json");
 }
