@@ -1,3 +1,7 @@
+#define CATCH_CONFIG_MAIN
+
+#include "catch.hpp"
+
 #include "coreir.h"
 
 #include <string>
@@ -275,13 +279,13 @@ void simulateConfig(const std::string& configFileName,
         "cullzexts",
         "removeconstduplicates",
         "packconnections"});
-  //"cullgraph"});
 
+  c->runPasses({"cullgraph"});
 
-  // if (!saveToFile(c->getGlobal(), "preEvalTopMod.json", wholeTopMod)) {
-  //   cout << "Could not save to json!!" << endl;
-  //   c->die();
-  // }
+  if (!saveToFile(c->getGlobal(), "preEvalTopMod.json", wholeTopMod)) {
+    cout << "Could not save to json!!" << endl;
+    c->die();
+  }
   
   auto regMap = state.getCircStates().back().registers;
   cout << "Converting " << regMap.size() << " registers to constants" << endl;
@@ -293,11 +297,15 @@ void simulateConfig(const std::string& configFileName,
 
   cout << "# of instances partially evaluated top after deleting dead instances = " << wholeTopMod->getDef()->getInstances().size() << endl;
 
+  c->runPasses({"cullgraph"});
+
   if (!saveToFile(c->getGlobal(), "deletedDeadInstances.json", wholeTopMod)) {
     cout << "Could not save to json!!" << endl;
     c->die();
   }
-  
+
+  c->runPasses({"cullgraph", "verifyconnectivity"});
+
   // NOTE: I would like to get rid of this line, but I'm not sure that can be done
   // safely.
   //unpackConnections(wholeTopMod);
@@ -361,15 +369,44 @@ void simulateConfiguredState(const std::string& fileName) {
   deleteContext(c);
 }
 
-int main() {
+// int main() {
 
-  string modName = "top"; //"pe_tile_new_unq1";
-  // NOTE: Must change every time yosys is run!
-  string fileName = "top.json"; //"__DOLLAR__paramod__BACKSLASH__test_lut__BACKSLASH__DataWidth__EQUALS__1.json";
+//   string modName = "top"; //"pe_tile_new_unq1";
+//   // NOTE: Must change every time yosys is run!
+//   string fileName = "top.json"; //"__DOLLAR__paramod__BACKSLASH__test_lut__BACKSLASH__DataWidth__EQUALS__1.json";
 
-  //processTop("pe_tile_new_unq1.json", "pe_tile_new_unq1");
-  simulateConfig("topModConfig.json", "pe_tile_new_unq1.json", "pe_tile_new_unq1");
+//   //processTop("pe_tile_new_unq1.json", "pe_tile_new_unq1");
+//   simulateConfig("topModConfig.json", "pe_tile_new_unq1.json", "pe_tile_new_unq1");
 
-  //simulateConfig("topModConfig.json", "top.json");
-  //simulateConfiguredState("partialEvalTopMod.json");
+//   //simulateConfig("topModConfig.json", "top.json");
+//   //simulateConfiguredState("partialEvalTopMod.json");
+// }
+
+TEST_CASE("Partially evaluating test_pe") {
+
+  Context* c = newContext();
+
+  
+  CoreIRLoadLibrary_rtlil(c);
+
+  Module* topMod = nullptr;
+
+  if (!loadFromFile(c, "test_pe_unq1.json", &topMod)) {
+    cout << "Could not Load from json!!" << endl;
+    c->die();
+  }
+
+  topMod = c->getGlobal()->getModule("test_pe_unq1");
+
+  assert(topMod != nullptr);
+  
+  c->setTop(topMod);
+
+  c->runPasses({"rungenerators",
+        "flatten",
+        "cullzexts",
+        "removeconstduplicates",
+        "packconnections"});
+
+  deleteContext(c);
 }
