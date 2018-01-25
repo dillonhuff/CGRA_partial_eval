@@ -386,7 +386,6 @@ TEST_CASE("Partially evaluating test_pe") {
 
   Context* c = newContext();
 
-  
   CoreIRLoadLibrary_rtlil(c);
 
   Module* topMod = nullptr;
@@ -406,7 +405,11 @@ TEST_CASE("Partially evaluating test_pe") {
         "flatten",
         "cullzexts",
         "removeconstduplicates",
-        "packconnections"});
+        "packconnections",
+        "cullgraph",
+        "clockifyinterface"});
+
+  SimulatorState state(topMod);
 
   deleteContext(c);
 }
