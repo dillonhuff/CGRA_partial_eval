@@ -45,11 +45,12 @@ std::vector<std::string> splitString(const std::string& str,
 BitVector hexStringToBitVector(const std::string& str) {
   vector<char> addrBytes = hexToBytes(str);
 
-  assert(addrBytes.size() == 4);
+  //assert(addrBytes.size() == 4);
+  int numBits = str.size() * 4;
 
   reverse(addrBytes);
 
-  BitVector configAddr(32, 0);
+  BitVector configAddr(numBits, 0);
 
   int offset = 0;
   for (auto byte : addrBytes) {
@@ -207,7 +208,8 @@ void processTop(const std::string& fileName,
 }
 
 void simulateConfig(const std::string& configFileName,
-                    const std::string& topFileName) {
+                    const std::string& topFileName,
+                    const std::string& topFileTopMod) {
 
   Context* c = newContext();
 
@@ -235,9 +237,13 @@ void simulateConfig(const std::string& configFileName,
   state.setClock("self.clk", 0, 1);
   state.setValue("self.reset", BitVec(1, 0));
 
+  // Setting tile ID
+  state.setValue("self.tile_id", BitVec(16, 1));
+
   cout << " Done building simulator state" << endl;
 
-  BitStreamConfig bs = loadConfig("./bitstream/shell_bitstream.bs");
+  BitStreamConfig bs = //loadConfig("./bitstream/shell_bitstream.bs");
+    loadConfig("./bitstream/tile_zero_conf.bs");
   for (uint i = 0; i < bs.configAddrs.size(); i++) {
     cout << "Simulating config " << i << endl;
     state.setValue("self.config_addr", bs.configAddrs[i]);
@@ -257,14 +263,26 @@ void simulateConfig(const std::string& configFileName,
     c->die();
   }
 
+  wholeTopMod = c->getGlobal()->getModule(topFileTopMod);
+
+  assert(wholeTopMod != nullptr);
+  
+  c->setTop(wholeTopMod);
+
   c->runPasses({"rungenerators",
         // TODO: Maybe pack connections here to help with inlining speed?
         "flatten",
         "cullzexts",
         "removeconstduplicates",
         "packconnections"});
+  //"cullgraph"});
 
 
+  // if (!saveToFile(c->getGlobal(), "preEvalTopMod.json", wholeTopMod)) {
+  //   cout << "Could not save to json!!" << endl;
+  //   c->die();
+  // }
+  
   auto regMap = state.getCircStates().back().registers;
   cout << "Converting " << regMap.size() << " registers to constants" << endl;
 
@@ -275,11 +293,26 @@ void simulateConfig(const std::string& configFileName,
 
   cout << "# of instances partially evaluated top after deleting dead instances = " << wholeTopMod->getDef()->getInstances().size() << endl;
 
+  if (!saveToFile(c->getGlobal(), "deletedDeadInstances.json", wholeTopMod)) {
+    cout << "Could not save to json!!" << endl;
+    c->die();
+  }
+  
   // NOTE: I would like to get rid of this line, but I'm not sure that can be done
   // safely.
-  // unpackConnections(wholeTopMod);
+  //unpackConnections(wholeTopMod);
 
-  cout << "Folding constants" << endl;
+  assert(wholeTopMod->getDef()->hasSel("test_pe$test_pe_comp$__DOLLAR__or__DOLLAR____DOT__/pe_verilog/test_pe_comp_unq1__DOT__sv__COLON__298__DOLLAR__368$op0.in0"));
+
+  Select* sel = cast<Select>(wholeTopMod->getDef()->sel("test_pe$test_pe_comp$__DOLLAR__or__DOLLAR____DOT__/pe_verilog/test_pe_comp_unq1__DOT__sv__COLON__298__DOLLAR__368$op0.in0"));
+
+  cout << "# of connected wireables for " << sel->toString() << endl;
+  cout << sel->getConnectedWireables().size() << endl;
+  for (auto wb : sel->getConnectedWireables()) {
+    cout << "\t" << wb->toString() << endl;
+  }
+
+  cout << "Folding constants to finish partial evaluation" << endl;
   foldConstants(wholeTopMod);
 
   cout << "Done folding constants" << endl;
@@ -288,7 +321,7 @@ void simulateConfig(const std::string& configFileName,
 
   cout << "# of instances partially evaluated top after constant folding = " << wholeTopMod->getDef()->getInstances().size() << endl;
 
-  //c->runPasses({"packconnections"});
+  c->runPasses({"packconnections"});
 
   c->setTop(wholeTopMod);
 
@@ -320,12 +353,10 @@ void simulateConfiguredState(const std::string& fileName) {
   
   // auto subCircuitInstances =
   //   extractSubcircuit(topMod, subCircuitPorts);
-  
   assert(topMod->hasDef());
 
   c->runPasses({"clockifyinterface"});
 
-  
 
   deleteContext(c);
 }
@@ -336,7 +367,8 @@ int main() {
   // NOTE: Must change every time yosys is run!
   string fileName = "top.json"; //"__DOLLAR__paramod__BACKSLASH__test_lut__BACKSLASH__DataWidth__EQUALS__1.json";
 
-  processTop("pe_tile_new_unq1.json", "pe_tile_new_unq1");
+  //processTop("pe_tile_new_unq1.json", "pe_tile_new_unq1");
+  simulateConfig("topModConfig.json", "pe_tile_new_unq1.json", "pe_tile_new_unq1");
 
   //simulateConfig("topModConfig.json", "top.json");
   //simulateConfiguredState("partialEvalTopMod.json");
