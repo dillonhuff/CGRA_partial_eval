@@ -424,5 +424,14 @@ TEST_CASE("Partially evaluating test_pe") {
 
   REQUIRE(state.getBitVec("self.res") == BitVec(16, 7*2));
 
+  state.setValue("self.op_a", BitVec(16, 7));
+  state.setValue("self.op_b", BitVec(16, 2));
+  state.setValue("self.op_code", BitVec(9, 0));
+  state.setValue("self.op_d_p", BitVec(1, 0));
+
+  state.execute();
+
+  REQUIRE(state.getBitVec("self.res") == BitVec(16, 7 + 2));
+  
   deleteContext(c);
 }
