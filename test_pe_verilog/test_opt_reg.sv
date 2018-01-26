@@ -69,6 +69,7 @@ always_ff @(posedge clk or negedge rst_n) begin
   end else if(data_in_le) begin
     data_in_reg <= data_in_reg_next;
   end
+
 end
 
 assign res = (mode == REG_BYPASS) ? data_in : data_in_reg;

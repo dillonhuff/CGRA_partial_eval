@@ -405,6 +405,11 @@ TEST_CASE("Partially evaluating") {
   
     c->setTop(topMod);
 
+    if (!saveToFile(c->getGlobal(), "test_pe_unq1_proper_top.json", topMod)) {
+      cout << "Could not save to json!!" << endl;
+      c->die();
+    }
+
     c->runPasses({"rungenerators",
           "flatten",
           "cullzexts",
@@ -413,13 +418,73 @@ TEST_CASE("Partially evaluating") {
           "cullgraph",
           "clockifyinterface"});
 
+    foldConstants(topMod);
+
+    if (!saveToFile(c->getGlobal(), "test_pe_unq1_flat_proc.json", topMod)) {
+      cout << "Could not save to json!!" << endl;
+      c->die();
+    }
+    
+    SimulatorState topState(topMod);
+
+    cout << "topState has main clock? " << topState.hasMainClock() << endl;
+    topState.setClock("self.clk", 0, 1);
+    topState.setValue("self.rst_n", BitVec(1, 0));
+    topState.setValue("self.clk_en", BitVec(1, 1));
+    topState.setValue("self.cfg_en", BitVec(1, 1));
+
+    topState.setValue("self.data0", BitVec(16, 0));
+    topState.setValue("self.data1", BitVec(16, 0));
+
+    topState.setValue("self.bit0", BitVec(1, 0));
+    topState.setValue("self.bit1", BitVec(1, 0));
+    topState.setValue("self.bit2", BitVec(1, 0));
+
+    // F1000001 00000002
+    // FF000001 0002000B
+    // 00020001 00000000
+    // 00070001 00000C00
+    
+    BitStreamConfig bs =
+      loadConfig("./bitstream/tile_zero_conf.bs");
+
+    cout << "Configuring pe tile" << endl;
+    for (uint i = 0; i < bs.configAddrs.size(); i++) {
+
+      cout << "Simulating config " << i << endl;
+
+      BitVec cfg_a(8, 0);
+      for (int j = 0; j < 8; j++) {
+        cfg_a.set(j, bs.configAddrs[i].get(j + 24));
+      }
+      //topState.setValue("self.cfg_a", bs.configAddrs[i]);
+      topState.setValue("self.cfg_a", cfg_a);
+      topState.setValue("self.cfg_d", bs.configDatas[i]);
+
+      topState.execute();
+      topState.execute();
+    
+    }
+
+    cout << "Done with configuration state" << endl;
+
+    topState.setValue("self.cfg_en", BitVec(1, 0));
+
+    topState.setValue("self.data0", BitVec(16, 3));
+
+    topState.execute();
+
+    REQUIRE(topState.getBitVec("self.res") == BitVec(16, 3*2));
+    
+    REQUIRE(false);
+
     vector<Wireable*> subCircuitPorts{def->sel("self")->sel("cfg_a"),
         def->sel("self")->sel("cfg_d"),
         def->sel("self")->sel("cfg_en"),
         def->sel("self")->sel("clk"),
         def->sel("self")->sel("clk_en"),
         def->sel("self")->sel("rst_n")};
-  
+
     auto subCircuitInstances =
       extractSubcircuit(topMod, subCircuitPorts);
 
@@ -457,11 +522,6 @@ TEST_CASE("Partially evaluating") {
       c->die();
     }
     
-    // F1000001 00000002
-    // FF000001 0002000B
-    // 00020001 00000000
-    // 00070001 00000C00
-
     c->runPasses({"clockifyinterface"});
     SimulatorState state(topMod_conf);
     
