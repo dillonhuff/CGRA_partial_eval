@@ -67,7 +67,9 @@ always_ff @(posedge clk) begin // or negedge rst_n) begin
   // if(~rst_n) begin
   //   data_in_reg <= 'h0;
   // end else if(data_in_le) begin
-   data_in_reg <= data_in_reg_next;
+   if(data_in_le) begin
+      data_in_reg <= data_in_reg_next;
+   end
   //end
 end
 

@@ -494,7 +494,7 @@ TEST_CASE("Partially evaluating") {
     cout << "Done with configuration state" << endl;
 
     topState.setValue("self.cfg_en", BitVec(1, 0));
-    topState.setValue("self.data0", BitVec(16, 8));
+    topState.setValue("self.data0", BitVec(16, 3));
     topState.setValue("self.data1", BitVec(16, 15));
 
     topState.execute();
