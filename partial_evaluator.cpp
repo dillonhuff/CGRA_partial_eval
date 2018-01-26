@@ -501,54 +501,14 @@ TEST_CASE("Partially evaluating") {
 
     REQUIRE(topState.getBitVec("self.res") == BitVec(16, 3*2));
 
-    vector<Wireable*> subCircuitPorts{def->sel("self")->sel("cfg_a"),
-        def->sel("self")->sel("cfg_d"),
-        def->sel("self")->sel("cfg_en"),
-        def->sel("self")->sel("clk"),
-        def->sel("self")->sel("clk_en"),
-        def->sel("self")->sel("rst_n")};
+    topState.setValue("self.cfg_en", BitVec(1, 0));
+    topState.setValue("self.data0", BitVec(16, 72));
+    topState.setValue("self.data1", BitVec(16, 13));
 
-    auto subCircuitInstances =
-      extractSubcircuit(topMod, subCircuitPorts);
+    topState.execute();
 
-    cout << "# of instances in subciruit = " << subCircuitInstances.size() << endl;
-
-    // Create the subcircuit for the config
-    addSubcircuitModule("topMod_config",
-                        topMod,
-                        subCircuitPorts,
-                        subCircuitInstances,
-                        c,
-                        c->getGlobal());
-
-    Module* topMod_conf =
-      c->getGlobal()->getModule("topMod_config");
-
-    // cout << "topMod_config interface" << endl;
-    // cout << topMod_conf->toString() << endl;
-
-    assert(topMod_conf != nullptr);
-    assert(topMod_conf->hasDef());
-
-    deleteDeadInstances(topMod_conf);
-
-    cout << "# of instances in subcircuit after deleting dead instances = " << topMod_conf->getDef()->getInstances().size() << endl;
-
-    c->setTop(topMod_conf);
-    c->runPasses({"removeconstduplicates", "cullgraph"});
-
-    cout << "# of instances in subcircuit after deleting duplicate constants = " << topMod_conf->getDef()->getInstances().size() << endl;
-  
-    cout << "Saving the config circuit" << endl;
-    if (!saveToFile(c->getGlobal(), "topModConfig.json", topMod_conf)) {
-      cout << "Could not save to json!!" << endl;
-      c->die();
-    }
+    REQUIRE(topState.getBitVec("self.res") == BitVec(16, 72*2));
     
-    c->runPasses({"clockifyinterface"});
-    SimulatorState state(topMod_conf);
-    
-
     deleteContext(c);
     
   }
