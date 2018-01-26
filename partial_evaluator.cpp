@@ -431,7 +431,7 @@ TEST_CASE("Partially evaluating") {
     topState.setClock("self.clk", 0, 1);
     topState.setValue("self.rst_n", BitVec(1, 0));
     topState.setValue("self.clk_en", BitVec(1, 1));
-    topState.setValue("self.cfg_en", BitVec(1, 1));
+    topState.setValue("self.cfg_en", BitVec(1, 0));
 
     topState.setValue("self.data0", BitVec(16, 0));
     topState.setValue("self.data1", BitVec(16, 0));
@@ -446,13 +446,38 @@ TEST_CASE("Partially evaluating") {
     // 00070001 00000C00
     
     BitStreamConfig bs =
-      loadConfig("./bitstream/tile_zero_conf.bs");
+      loadConfig("./bitstream/shell_bitstream.bs");
 
+    BitVec tileId(16, 1);
+    
     cout << "Configuring pe tile" << endl;
     for (uint i = 0; i < bs.configAddrs.size(); i++) {
 
+      
       cout << "Simulating config " << i << endl;
 
+
+      BitVec cfg_id(16, 0);
+      for (int j = 0; j < 16; j++) {
+        cfg_id.set(j, bs.configAddrs[i].get(j));
+      }
+
+      bool configTile = true;
+      for (int j = 16; j < 24; j++) {
+        if (bs.configAddrs[i].get(j) == 1) {
+          configTile = false;
+        }
+      }
+
+      if (configTile && (cfg_id == tileId)) {
+        cout << "Configuring tile, addr = " << bs.configAddrs[i] << ", data = " <<
+          bs.configDatas[i] << endl;
+
+        topState.setValue("self.cfg_en", BitVec(1, 1));
+      } else {
+        topState.setValue("self.cfg_en", BitVec(1, 0));
+      }
+      
       BitVec cfg_a(8, 0);
       for (int j = 0; j < 8; j++) {
         cfg_a.set(j, bs.configAddrs[i].get(j + 24));
@@ -469,14 +494,12 @@ TEST_CASE("Partially evaluating") {
     cout << "Done with configuration state" << endl;
 
     topState.setValue("self.cfg_en", BitVec(1, 0));
-
-    topState.setValue("self.data0", BitVec(16, 3));
+    topState.setValue("self.data0", BitVec(16, 8));
+    topState.setValue("self.data1", BitVec(16, 15));
 
     topState.execute();
 
     REQUIRE(topState.getBitVec("self.res") == BitVec(16, 3*2));
-    
-    REQUIRE(false);
 
     vector<Wireable*> subCircuitPorts{def->sel("self")->sel("cfg_a"),
         def->sel("self")->sel("cfg_d"),
@@ -529,6 +552,8 @@ TEST_CASE("Partially evaluating") {
     deleteContext(c);
     
   }
+
+  assert(false);
 
   SECTION("test_pe_comp_unq1") {
     Module* topMod = nullptr;
