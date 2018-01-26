@@ -382,56 +382,140 @@ void simulateConfiguredState(const std::string& fileName) {
 //   //simulateConfiguredState("partialEvalTopMod.json");
 // }
 
-TEST_CASE("Partially evaluating test_pe") {
+TEST_CASE("Partially evaluating") {
 
   Context* c = newContext();
 
   CoreIRLoadLibrary_rtlil(c);
 
-  Module* topMod = nullptr;
+  SECTION("test_pe") {
+    Module* topMod = nullptr;
 
-  if (!loadFromFile(c, "test_pe_comp_unq1.json", &topMod)) {
-    cout << "Could not Load from json!!" << endl;
-    c->die();
+    if (!loadFromFile(c, "test_pe_unq1.json", &topMod)) {
+      cout << "Could not Load from json!!" << endl;
+      c->die();
+    }
+
+    topMod = c->getGlobal()->getModule("test_pe_unq1");
+
+    assert(topMod != nullptr);
+    assert(topMod->hasDef());
+
+    auto def = topMod->getDef();
+  
+    c->setTop(topMod);
+
+    c->runPasses({"rungenerators",
+          "flatten",
+          "cullzexts",
+          "removeconstduplicates",
+          "packconnections",
+          "cullgraph",
+          "clockifyinterface"});
+
+    vector<Wireable*> subCircuitPorts{def->sel("self")->sel("cfg_a"),
+        def->sel("self")->sel("cfg_d"),
+        def->sel("self")->sel("cfg_en"),
+        def->sel("self")->sel("clk"),
+        def->sel("self")->sel("clk_en"),
+        def->sel("self")->sel("rst_n")};
+  
+    auto subCircuitInstances =
+      extractSubcircuit(topMod, subCircuitPorts);
+
+    cout << "# of instances in subciruit = " << subCircuitInstances.size() << endl;
+
+    // Create the subcircuit for the config
+    addSubcircuitModule("topMod_config",
+                        topMod,
+                        subCircuitPorts,
+                        subCircuitInstances,
+                        c,
+                        c->getGlobal());
+
+    Module* topMod_conf =
+      c->getGlobal()->getModule("topMod_config");
+
+    // cout << "topMod_config interface" << endl;
+    // cout << topMod_conf->toString() << endl;
+
+    assert(topMod_conf != nullptr);
+    assert(topMod_conf->hasDef());
+
+    deleteDeadInstances(topMod_conf);
+
+    cout << "# of instances in subcircuit after deleting dead instances = " << topMod_conf->getDef()->getInstances().size() << endl;
+
+    c->setTop(topMod_conf);
+    c->runPasses({"removeconstduplicates", "cullgraph"});
+
+    cout << "# of instances in subcircuit after deleting duplicate constants = " << topMod_conf->getDef()->getInstances().size() << endl;
+  
+    cout << "Saving the config circuit" << endl;
+    if (!saveToFile(c->getGlobal(), "topModConfig.json", topMod_conf)) {
+      cout << "Could not save to json!!" << endl;
+      c->die();
+    }
+    
+    // F1000001 00000002
+    // FF000001 0002000B
+    // 00020001 00000000
+    // 00070001 00000C00
+
+    c->runPasses({"clockifyinterface"});
+    SimulatorState state(topMod_conf);
+    
+
+    deleteContext(c);
+    
   }
 
-  topMod = c->getGlobal()->getModule("test_pe_comp_unq1");
+  SECTION("test_pe_comp_unq1") {
+    Module* topMod = nullptr;
 
-  assert(topMod != nullptr);
+    if (!loadFromFile(c, "test_pe_comp_unq1.json", &topMod)) {
+      cout << "Could not Load from json!!" << endl;
+      c->die();
+    }
+
+    topMod = c->getGlobal()->getModule("test_pe_comp_unq1");
+
+    assert(topMod != nullptr);
   
-  c->setTop(topMod);
+    c->setTop(topMod);
 
-  c->runPasses({"rungenerators",
-        "flatten",
-        "cullzexts",
-        "removeconstduplicates",
-        "packconnections",
-        "cullgraph",
-        "clockifyinterface"});
+    c->runPasses({"rungenerators",
+          "flatten",
+          "cullzexts",
+          "removeconstduplicates",
+          "packconnections",
+          "cullgraph",
+          "clockifyinterface"});
 
-// F1000001 00000002
-// FF000001 0002000B
-// 00020001 00000000
-// 00070001 00000C00
+    // F1000001 00000002
+    // FF000001 0002000B
+    // 00020001 00000000
+    // 00070001 00000C00
 
-  SimulatorState state(topMod);
-  state.setValue("self.op_a", BitVec(16, 7));
-  state.setValue("self.op_b", BitVec(16, 2));
-  state.setValue("self.op_code", BitVec(9, 11));
-  state.setValue("self.op_d_p", BitVec(1, 0));
+    SimulatorState state(topMod);
+    state.setValue("self.op_a", BitVec(16, 7));
+    state.setValue("self.op_b", BitVec(16, 2));
+    state.setValue("self.op_code", BitVec(9, 11));
+    state.setValue("self.op_d_p", BitVec(1, 0));
 
-  state.execute();
+    state.execute();
 
-  REQUIRE(state.getBitVec("self.res") == BitVec(16, 7*2));
+    REQUIRE(state.getBitVec("self.res") == BitVec(16, 7*2));
 
-  state.setValue("self.op_a", BitVec(16, 7));
-  state.setValue("self.op_b", BitVec(16, 2));
-  state.setValue("self.op_code", BitVec(9, 0));
-  state.setValue("self.op_d_p", BitVec(1, 0));
+    state.setValue("self.op_a", BitVec(16, 7));
+    state.setValue("self.op_b", BitVec(16, 2));
+    state.setValue("self.op_code", BitVec(9, 0));
+    state.setValue("self.op_d_p", BitVec(1, 0));
 
-  state.execute();
+    state.execute();
 
-  REQUIRE(state.getBitVec("self.res") == BitVec(16, 7 + 2));
+    REQUIRE(state.getBitVec("self.res") == BitVec(16, 7 + 2));
   
-  deleteContext(c);
+    deleteContext(c);
+  }
 }
