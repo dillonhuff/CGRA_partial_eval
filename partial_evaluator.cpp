@@ -495,12 +495,12 @@ TEST_CASE("Partially evaluating") {
 
     c->setTop(wholeTopMod);
 
-    c->runPasses({"rungenerators",
-          "flatten",
-          "cullzexts",
-          "removeconstduplicates",
-          "packconnections",
-          "clockifyinterface"});
+    // c->runPasses({"rungenerators",
+    //       "flatten",
+    //       "cullzexts",
+    //       "removeconstduplicates",
+    //       "packconnections",
+    //       "clockifyinterface"});
     
     cout << "Done with configuration state" << endl;
 
@@ -514,14 +514,7 @@ TEST_CASE("Partially evaluating") {
 
     cout << "# of instances partially evaluated top after deleting dead instances = " << wholeTopMod->getDef()->getInstances().size() << endl;
 
-    //c->runPasses({"cullgraph"});
-
-    // if (!saveToFile(c->getGlobal(), "deletedDeadInstances.json", wholeTopMod)) {
-    //   cout << "Could not save to json!!" << endl;
-    //   c->die();
-    // }
-
-    c->runPasses({"cullgraph", "verifyconnectivity"});
+    c->runPasses({"cullgraph"}); //, "verifyconnectivity"});
 
     cout << "Folding constants to finish partial evaluation" << endl;
     foldConstants(wholeTopMod);
@@ -544,7 +537,7 @@ TEST_CASE("Partially evaluating") {
     
     deleteContext(c);
 
-    assert(false);
+    //assert(false);
   }
 
   SECTION("test_pe") {
