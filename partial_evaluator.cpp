@@ -553,8 +553,6 @@ TEST_CASE("Partially evaluating") {
     
   }
 
-  assert(false);
-
   SECTION("test_pe_comp_unq1") {
     Module* topMod = nullptr;
 
