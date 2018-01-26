@@ -74,7 +74,11 @@ module  test_lut  #(
 
 
 // logic [31:0] nc_cfg_d;
-// assign nc_cfg_d = cfg_d;
+   //assign nc_cfg_d = 0;
+//cfg_d;
+
+   assign res = DataWidth'd0;
+   
 
 endmodule
 

@@ -390,12 +390,12 @@ TEST_CASE("Partially evaluating test_pe") {
 
   Module* topMod = nullptr;
 
-  if (!loadFromFile(c, "test_pe_unq1.json", &topMod)) {
+  if (!loadFromFile(c, "test_pe_comp_unq1.json", &topMod)) {
     cout << "Could not Load from json!!" << endl;
     c->die();
   }
 
-  topMod = c->getGlobal()->getModule("test_pe_unq1");
+  topMod = c->getGlobal()->getModule("test_pe_comp_unq1");
 
   assert(topMod != nullptr);
   

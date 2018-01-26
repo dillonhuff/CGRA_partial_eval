@@ -13,26 +13,26 @@
 //	-----------------------------------------------
 //	
 //
-//  Source file: /Users/dillon/VerilogWorkspace/CGRAGenerator/hardware/generator_z/pe_new/pe/rtl/test_pe_comp.svp
+//  Source file: /Users/dillon/VerilogWorkspace/config_chip/CGRAGenerator/hardware/generator_z/pe_new/pe/rtl/test_pe_comp.svp
 //  Source template: test_pe_comp
 //
 // --------------- Begin Pre-Generation Parameters Status Report ---------------
 //
 //	From 'generate' statement (priority=5):
-// Parameter mult_mode 	= 1
 // Parameter en_double 	= 0
-// Parameter use_relu 	= 1
-// Parameter is_msb 	= 0
-// Parameter en_opt 	= 1
-// Parameter use_cntr 	= 0
 // Parameter use_add 	= 1
-// Parameter use_shift 	= 1
-// Parameter use_div 	= 0
 // Parameter use_max_min 	= 1
 // Parameter en_trick 	= 0
-// Parameter debug 	= 0
-// Parameter use_bool 	= 1
 // Parameter use_abs 	= 1
+// Parameter mult_mode 	= 1
+// Parameter use_div 	= 0
+// Parameter is_msb 	= 0
+// Parameter en_opt 	= 1
+// Parameter use_shift 	= 1
+// Parameter use_bool 	= 1
+// Parameter use_cntr 	= 0
+// Parameter use_relu 	= 1
+// Parameter debug 	= 0
 //
 //		---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
 //
@@ -140,8 +140,8 @@ logic [DATA_MSB:0]  add_a     [ADD_MSB:0];
 logic [DATA_MSB:0]  add_b     [ADD_MSB:0];
 logic               add_c_in  [ADD_MSB:0];
 
-logic [DATA_MSB:0]  add_res   [ADD_MSB:0];
-logic               add_c_out [ADD_MSB:0];
+wire [DATA_MSB:0]  add_res   [ADD_MSB:0];
+wire               add_c_out [ADD_MSB:0];
 
 
 genvar ggg;
