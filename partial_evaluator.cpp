@@ -414,7 +414,7 @@ TEST_CASE("Partially evaluating") {
 
     Module* topMod = nullptr;
 
-    if (!loadFromFile(c, "pe_tile_new_unq1.json", &topMod)) {
+    if (!loadFromFile(c, "sb_unq1.json", &topMod)) {
       cout << "Could not Load from json!!" << endl;
       c->die();
     }
@@ -501,13 +501,13 @@ TEST_CASE("Partially evaluating") {
     for (uint i = 0; i < bs.configAddrs.size(); i++) {
 
       cout << "Simulating config " << i << endl;
+      cout << "config addr = " << bs.configAddrs[i] << endl;
+      cout << "config data = " << bs.configDatas[i] << endl;
 
       topState.setValue("self.config_addr", bs.configAddrs[i]);
       topState.setValue("self.config_data", bs.configDatas[i]);
 
       topState.execute();
-      topState.execute();
-    
     }
 
     Module* wholeTopMod = nullptr;
