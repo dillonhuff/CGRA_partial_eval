@@ -385,12 +385,21 @@ void simulateConfiguredState(const std::string& fileName) {
 void partiallyEvaluateCircuit(CoreIR::Module* const wholeTopMod,
                               std::unordered_map<std::string, BitVec>& regMap) {
   cout << "Converting " << regMap.size() << " registers to constants" << endl;
+  for (auto reg : regMap) {
+    cout << "\t" << reg.first << " ---> " << reg.second << endl;
+  }
 
   registersToConstants(wholeTopMod, regMap);
 
   cout << "Deleting dead instances" << endl;
   deleteDeadInstances(wholeTopMod);
 
+  cout << wholeTopMod->toString() << endl;
+  if (!saveToFile(wholeTopMod->getContext()->getGlobal(), "sb_unq1_registered.json", wholeTopMod)) {
+    cout << "Could not save to json!!" << endl;
+    assert(false);
+  }
+  
   cout << "# of instances partially evaluated top after deleting dead instances = " << wholeTopMod->getDef()->getInstances().size() << endl;
 
   cout << "Folding constants to finish partial evaluation" << endl;
@@ -487,16 +496,13 @@ TEST_CASE("Partially evaluating") {
     topState.execute();
 
     REQUIRE(topState.getBitVec("self.out_1_0") == BitVec(16, 2));
-    
-    assert(false);
-    
   }
 
   SECTION("partially evaluating switch box") {
 
     Module* topMod = nullptr;
 
-    if (!loadFromFile(c, "sb_unq1.json", &topMod)) {
+    if (!loadFromFile(c, "sb_simplified_unq1.json", &topMod)) {
       cout << "Could not Load from json!!" << endl;
       c->die();
     }
@@ -577,7 +583,7 @@ TEST_CASE("Partially evaluating") {
     topState.setValue("self.config_en", BitVec(1, 1));
     
     BitStreamConfig bs =
-      loadConfig("./bitstream/sb_1_bitstream.bs");
+      loadConfig("./bitstream/sb_2_bitstream.bs");
 
     cout << "Configuring pe tile" << endl;
     for (uint i = 0; i < bs.configAddrs.size(); i++) {
@@ -602,7 +608,6 @@ TEST_CASE("Partially evaluating") {
     cout << "Done with configuration state" << endl;
 
     auto regMap = topState.getCircStates().back().registers;
-
     
     partiallyEvaluateCircuit(wholeTopMod, regMap);
 
