@@ -382,11 +382,165 @@ void simulateConfiguredState(const std::string& fileName) {
 //   //simulateConfiguredState("partialEvalTopMod.json");
 // }
 
+void partiallyEvaluateCircuit(CoreIR::Module* const wholeTopMod,
+                              std::unordered_map<std::string, BitVec>& regMap) {
+  cout << "Converting " << regMap.size() << " registers to constants" << endl;
+
+  registersToConstants(wholeTopMod, regMap);
+
+  cout << "Deleting dead instances" << endl;
+  deleteDeadInstances(wholeTopMod);
+
+  cout << "# of instances partially evaluated top after deleting dead instances = " << wholeTopMod->getDef()->getInstances().size() << endl;
+
+  cout << "Folding constants to finish partial evaluation" << endl;
+  foldConstants(wholeTopMod);
+
+  cout << "Done folding constants" << endl;
+
+  deleteDeadInstances(wholeTopMod);
+
+  cout << "# of instances partially evaluated top after constant folding = " << wholeTopMod->getDef()->getInstances().size() << endl;
+
+}
+
 TEST_CASE("Partially evaluating") {
 
   Context* c = newContext();
 
   CoreIRLoadLibrary_rtlil(c);
+
+  SECTION("partially evaluating switch box") {
+
+    Module* topMod = nullptr;
+
+    if (!loadFromFile(c, "pe_tile_new_unq1.json", &topMod)) {
+      cout << "Could not Load from json!!" << endl;
+      c->die();
+    }
+
+    topMod = c->getGlobal()->getModule("sb_unq1");
+
+    assert(topMod != nullptr);
+    assert(topMod->hasDef());
+
+    auto def = topMod->getDef();
+  
+    c->setTop(topMod);
+
+    if (!saveToFile(c->getGlobal(), "sb_unq1_proper_top.json", topMod)) {
+      cout << "Could not save to json!!" << endl;
+      c->die();
+    }
+
+    c->runPasses({"rungenerators",
+          "flatten",
+          "cullzexts",
+          "removeconstduplicates",
+          "packconnections",
+          "clockifyinterface"});
+
+    foldConstants(topMod);
+
+    if (!saveToFile(c->getGlobal(), "sb_unq1_flat_proc.json", topMod)) {
+      cout << "Could not save to json!!" << endl;
+      c->die();
+    }
+
+    vector<Wireable*> subCircuitPorts{def->sel("self")->sel("config_addr"),
+        def->sel("self")->sel("config_data"),
+        def->sel("self")->sel("clk"),
+        def->sel("self")->sel("reset"),
+        def->sel("self")->sel("config_en")};
+  
+    auto subCircuitInstances =
+      extractSubcircuit(topMod, subCircuitPorts);
+
+    cout << "# of instances in subciruit = " << subCircuitInstances.size() << endl;
+
+    // Create the subcircuit for the config
+    addSubcircuitModule("topMod_config",
+                        topMod,
+                        subCircuitPorts,
+                        subCircuitInstances,
+                        c,
+                        c->getGlobal());
+
+    Module* topMod_conf =
+      c->getGlobal()->getModule("topMod_config");
+
+    assert(topMod_conf != nullptr);
+    assert(topMod_conf->hasDef());
+
+    deleteDeadInstances(topMod_conf);
+
+    cout << "# of instances in subcircuit after deleting dead instances = " << topMod_conf->getDef()->getInstances().size() << endl;
+
+    c->setTop(topMod_conf);
+    c->runPasses({"removeconstduplicates"}); //, "cullgraph"});
+
+    cout << "# of instances in subcircuit after deleting duplicate constants = " << topMod_conf->getDef()->getInstances().size() << endl;
+  
+    cout << "Saving the config circuit" << endl;
+    if (!saveToFile(c->getGlobal(), "topModConfig.json", topMod_conf)) {
+      cout << "Could not save to json!!" << endl;
+      c->die();
+    }
+    
+    SimulatorState topState(topMod_conf);
+
+    // cout << "topState has main clock? " << topState.hasMainClock() << endl;
+    topState.setClock("self.clk", 0, 1);
+    topState.setValue("self.reset", BitVec(1, 0));
+    topState.setValue("self.config_en", BitVec(1, 1));
+    
+    BitStreamConfig bs =
+      loadConfig("./bitstream/sb_1_bitstream.bs");
+
+    cout << "Configuring pe tile" << endl;
+    for (uint i = 0; i < bs.configAddrs.size(); i++) {
+
+      cout << "Simulating config " << i << endl;
+
+      topState.setValue("self.config_addr", bs.configAddrs[i]);
+      topState.setValue("self.config_data", bs.configDatas[i]);
+
+      topState.execute();
+      topState.execute();
+    
+    }
+
+    Module* wholeTopMod = nullptr;
+    wholeTopMod = c->getGlobal()->getModule("sb_unq1");
+
+    assert(wholeTopMod != nullptr);
+
+    c->setTop(wholeTopMod);
+
+    cout << "Done with configuration state" << endl;
+
+    auto regMap = topState.getCircStates().back().registers;
+
+    
+    partiallyEvaluateCircuit(wholeTopMod, regMap);
+
+    c->runPasses({"cullgraph"});
+    c->runPasses({"packconnections"});
+
+    c->setTop(wholeTopMod);
+
+    if (!saveToFile(c->getGlobal(), "sb_unq1_partially_evaluated.json", wholeTopMod)) {
+      cout << "Could not save to json!!" << endl;
+      c->die();
+    }
+
+    // TODO: Add test of outputs, also what does 
+
+    deleteContext(c);
+
+    assert(false);
+
+  }
 
   SECTION("full pe tile including connect and switch box") {
     Module* topMod = nullptr;
@@ -495,49 +649,28 @@ TEST_CASE("Partially evaluating") {
 
     c->setTop(wholeTopMod);
 
-    // c->runPasses({"rungenerators",
-    //       "flatten",
-    //       "cullzexts",
-    //       "removeconstduplicates",
-    //       "packconnections",
-    //       "clockifyinterface"});
-    
     cout << "Done with configuration state" << endl;
 
     auto regMap = topState.getCircStates().back().registers;
-    cout << "Converting " << regMap.size() << " registers to constants" << endl;
 
-    registersToConstants(wholeTopMod, topState.getCircStates().back().registers);
+    
+    partiallyEvaluateCircuit(wholeTopMod, regMap);
 
-    cout << "Deleting dead instances" << endl;
-    deleteDeadInstances(wholeTopMod);
-
-    cout << "# of instances partially evaluated top after deleting dead instances = " << wholeTopMod->getDef()->getInstances().size() << endl;
-
-    c->runPasses({"cullgraph"}); //, "verifyconnectivity"});
-
-    cout << "Folding constants to finish partial evaluation" << endl;
-    foldConstants(wholeTopMod);
-
-    cout << "Done folding constants" << endl;
-
-    deleteDeadInstances(wholeTopMod);
-
-    cout << "# of instances partially evaluated top after constant folding = " << wholeTopMod->getDef()->getInstances().size() << endl;
-
+    c->runPasses({"cullgraph"});
     c->runPasses({"packconnections"});
 
     c->setTop(wholeTopMod);
 
-    c->runPasses({"cullgraph"});
     if (!saveToFile(c->getGlobal(), "pe_tile_new_partially_evaluated.json", wholeTopMod)) {
       cout << "Could not save to json!!" << endl;
       c->die();
     }
-    
+
+    // TODO: Add test of outputs, also what does 
+
     deleteContext(c);
 
-    //assert(false);
+    assert(false);
   }
 
   SECTION("test_pe") {
