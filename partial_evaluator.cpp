@@ -495,6 +495,86 @@ TEST_CASE("Simplified switch box") {
   deleteContext(c);
 }
 
+TEST_CASE("Registerizing switch box") {
+  Context* c = newContext();
+
+  CoreIRLoadLibrary_rtlil(c);
+
+  SECTION("") {
+
+    Module* topMod = loadModule(c, "switch_register.json", "switch_register");
+
+    assert(topMod->hasDef());
+
+    auto def = topMod->getDef();
+
+    c->setTop(topMod);
+
+    if (!saveToFile(c->getGlobal(), "sb_unq1_proper_top.json", topMod)) {
+      cout << "Could not save to json!!" << endl;
+      c->die();
+    }
+
+    c->runPasses({"rungenerators",
+          "flatten",
+          "cullzexts",
+          "removeconstduplicates",
+          "packconnections",
+          "clockifyinterface"});
+
+    foldConstants(topMod);
+
+    if (!saveToFile(c->getGlobal(), "sb_unq1_flat_proc.json", topMod)) {
+      cout << "Could not save to json!!" << endl;
+      c->die();
+    }
+    
+    SimulatorState topState(topMod);
+
+    // cout << "topState has main clock? " << topState.hasMainClock() << endl;
+    topState.setClock("self.clk", 0, 1);
+    topState.setValue("self.reset", BitVec(1, 0));
+    topState.setValue("self.config_en", BitVec(1, 1));
+
+    topState.setValue("self.in_0_0", BitVec(16, 0));
+    topState.setValue("self.in_2_0", BitVec(16, 2));
+    topState.setValue("self.in_3_0", BitVec(16, 3));
+    topState.setValue("self.pe_output_0", BitVec(16, 34));
+    
+    BitStreamConfig bs =
+      loadConfig("./bitstream/sb_1_bitstream.bs");
+
+    cout << "Configuring pe tile" << endl;
+    for (uint i = 0; i < bs.configAddrs.size(); i++) {
+
+      cout << "Simulating config " << i << endl;
+      cout << "config addr = " << bs.configAddrs[i] << endl;
+      cout << "config data = " << bs.configDatas[i] << endl;
+
+      topState.setValue("self.config_addr", bs.configAddrs[i]);
+      topState.setValue("self.config_data", bs.configDatas[i]);
+
+      topState.execute();
+    }
+
+    topState.setValue("self.config_en", BitVec(1, 0));
+    topState.setValue("self.pe_output_0", BitVec(16, 34));
+
+    topState.execute();
+
+    REQUIRE(topState.getBitVec("self.out_1_0") == BitVec(16, 34));
+
+    topState.setValue("self.pe_output_0", BitVec(16, 2));
+
+    topState.execute();
+
+    REQUIRE(topState.getBitVec("self.out_1_0") == BitVec(16, 2));
+
+  }
+
+  deleteContext(c);
+}
+
 TEST_CASE("Partially evaluating") {
 
   Context* c = newContext();
@@ -503,7 +583,7 @@ TEST_CASE("Partially evaluating") {
 
   SECTION("Run switch box") {
 
-    Module* topMod = loadModule(c, "sb_unq1.json", "sb_unq1"); //nullptr;
+    Module* topMod = loadModule(c, "sb_unq1.json", "sb_unq1");
 
     assert(topMod->hasDef());
 
