@@ -502,7 +502,7 @@ TEST_CASE("Registerizing switch box") {
 
   SECTION("") {
 
-    Module* topMod = loadModule(c, "switch_register.json", "switch_register");
+    Module* topMod = loadModule(c, "registered_switch.json", "registered_switch");
 
     assert(topMod->hasDef());
 
@@ -533,7 +533,6 @@ TEST_CASE("Registerizing switch box") {
 
     // cout << "topState has main clock? " << topState.hasMainClock() << endl;
     topState.setClock("self.clk", 0, 1);
-    topState.setValue("self.reset", BitVec(1, 0));
     topState.setValue("self.config_en", BitVec(1, 1));
 
     topState.setValue("self.in_0_0", BitVec(16, 0));
