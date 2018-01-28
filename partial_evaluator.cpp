@@ -369,19 +369,6 @@ void simulateConfiguredState(const std::string& fileName) {
   deleteContext(c);
 }
 
-// int main() {
-
-//   string modName = "top"; //"pe_tile_new_unq1";
-//   // NOTE: Must change every time yosys is run!
-//   string fileName = "top.json"; //"__DOLLAR__paramod__BACKSLASH__test_lut__BACKSLASH__DataWidth__EQUALS__1.json";
-
-//   //processTop("pe_tile_new_unq1.json", "pe_tile_new_unq1");
-//   simulateConfig("topModConfig.json", "pe_tile_new_unq1.json", "pe_tile_new_unq1");
-
-//   //simulateConfig("topModConfig.json", "top.json");
-//   //simulateConfiguredState("partialEvalTopMod.json");
-// }
-
 void partiallyEvaluateCircuit(CoreIR::Module* const wholeTopMod,
                               std::unordered_map<std::string, BitVec>& regMap) {
   cout << "Converting " << regMap.size() << " registers to constants" << endl;
@@ -394,6 +381,12 @@ void partiallyEvaluateCircuit(CoreIR::Module* const wholeTopMod,
   cout << "Deleting dead instances" << endl;
   deleteDeadInstances(wholeTopMod);
 
+  for (auto inst : wholeTopMod->getDef()->getInstances()) {
+    cout << "\t" << inst.second->toString() << " : " << inst.second->getModuleRef()->toString() << endl;
+  }
+
+  cout << "Top module after deleting dead instances" << endl;
+  wholeTopMod->print();
   cout << wholeTopMod->toString() << endl;
   if (!saveToFile(wholeTopMod->getContext()->getGlobal(), "sb_unq1_registered.json", wholeTopMod)) {
     cout << "Could not save to json!!" << endl;
@@ -413,6 +406,23 @@ void partiallyEvaluateCircuit(CoreIR::Module* const wholeTopMod,
 
 }
 
+Module* loadModule(CoreIR::Context* const c,
+                   const std::string& fileName,
+                   const std::string& topModName) {
+  Module* topMod = nullptr;
+
+  if (!loadFromFile(c, fileName, &topMod)) {
+    cout << "Could not Load from json!!" << endl;
+    c->die();
+  }
+
+  topMod = c->getGlobal()->getModule(topModName);
+
+  assert(topMod != nullptr);
+
+  return topMod;
+}
+
 TEST_CASE("Partially evaluating") {
 
   Context* c = newContext();
@@ -421,16 +431,16 @@ TEST_CASE("Partially evaluating") {
 
   SECTION("Run switch box") {
 
-    Module* topMod = nullptr;
+    Module* topMod = loadModule(c, "sb_unq1.json", "sb_unq1"); //nullptr;
 
-    if (!loadFromFile(c, "sb_unq1.json", &topMod)) {
-      cout << "Could not Load from json!!" << endl;
-      c->die();
-    }
+    // if (!loadFromFile(c, "sb_unq1.json", &topMod)) {
+    //   cout << "Could not Load from json!!" << endl;
+    //   c->die();
+    // }
 
-    topMod = c->getGlobal()->getModule("sb_unq1");
+    // topMod = c->getGlobal()->getModule("sb_unq1");
 
-    assert(topMod != nullptr);
+    // assert(topMod != nullptr);
     assert(topMod->hasDef());
 
     auto def = topMod->getDef();
@@ -625,7 +635,7 @@ TEST_CASE("Partially evaluating") {
 
     deleteContext(c);
 
-    assert(false);
+    //assert(false);
 
   }
 
@@ -757,7 +767,7 @@ TEST_CASE("Partially evaluating") {
 
     deleteContext(c);
 
-    assert(false);
+    //assert(false);
   }
 
   SECTION("test_pe") {
