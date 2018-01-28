@@ -378,9 +378,6 @@ void partiallyEvaluateCircuit(CoreIR::Module* const wholeTopMod,
 
   registersToConstants(wholeTopMod, regMap);
 
-  cout << "Deleting dead instances" << endl;
-  deleteDeadInstances(wholeTopMod);
-
   for (auto inst : wholeTopMod->getDef()->getInstances()) {
     cout << "\t" << inst.second->toString() << " : " << inst.second->getModuleRef()->toString() << endl;
   }
@@ -393,6 +390,9 @@ void partiallyEvaluateCircuit(CoreIR::Module* const wholeTopMod,
     assert(false);
   }
   
+  cout << "Deleting dead instances" << endl;
+  deleteDeadInstances(wholeTopMod);
+
   cout << "# of instances partially evaluated top after deleting dead instances = " << wholeTopMod->getDef()->getInstances().size() << endl;
 
   cout << "Folding constants to finish partial evaluation" << endl;
@@ -429,22 +429,80 @@ TEST_CASE("Partially evaluating") {
 
   CoreIRLoadLibrary_rtlil(c);
 
+  SECTION("Folding a switch constant") {
+    Module* topMod = loadModule(c, "switch_fold.json", "switch_fold"); //nullptr;
+
+    assert(topMod->hasDef());
+
+    auto def = topMod->getDef();
+
+    c->setTop(topMod);
+
+    c->runPasses({"rungenerators",
+          "flatten"});
+
+    SECTION("Evaluating before any optimizations") {
+      SimulatorState originalState(topMod);
+      originalState.setValue("self.in_0_0", BitVec(2, 1));
+      originalState.setValue("self.in_2_0", BitVec(2, 2));
+      originalState.setValue("self.in_3_0", BitVec(2, 3));
+      originalState.setValue("self.pe_output_0", BitVec(2, 23));
+
+      originalState.execute();
+
+      REQUIRE(originalState.getBitVec("self.out_1_0") == BitVec(2, 23));
+    }
+    
+    c->runPasses({
+          "cullzexts",
+          "removeconstduplicates",
+          "packconnections",
+          "clockifyinterface"});
+
+    SECTION("Evaluating the original state") {
+      SimulatorState originalState(topMod);
+      originalState.setValue("self.in_0_0", BitVec(2, 1));
+      originalState.setValue("self.in_2_0", BitVec(2, 2));
+      originalState.setValue("self.in_3_0", BitVec(2, 3));
+      originalState.setValue("self.pe_output_0", BitVec(2, 23));
+
+      originalState.execute();
+
+      REQUIRE(originalState.getBitVec("self.out_1_0") == BitVec(2, 23));
+    }
+
+    foldConstants(topMod);
+    deleteDeadInstances(topMod);
+
+    if (!saveToFile(c->getGlobal(), "switch_constant_folded.json", topMod)) {
+      cout << "Could not save to json!!" << endl;
+      c->die();
+    }
+
+    SECTION("Evaluating the system after partial evaluation") {
+      SimulatorState evalState(topMod);
+      evalState.setValue("self.in_0_0", BitVec(2, 1));
+      evalState.setValue("self.in_2_0", BitVec(2, 2));
+      evalState.setValue("self.in_3_0", BitVec(2, 3));
+      evalState.setValue("self.pe_output_0", BitVec(2, 23));
+
+      evalState.execute();
+
+      REQUIRE(evalState.getBitVec("self.out_1_0") == BitVec(2, 23));
+    }
+
+  }
+
+  assert(false);
+  
   SECTION("Run switch box") {
 
     Module* topMod = loadModule(c, "sb_unq1.json", "sb_unq1"); //nullptr;
 
-    // if (!loadFromFile(c, "sb_unq1.json", &topMod)) {
-    //   cout << "Could not Load from json!!" << endl;
-    //   c->die();
-    // }
-
-    // topMod = c->getGlobal()->getModule("sb_unq1");
-
-    // assert(topMod != nullptr);
     assert(topMod->hasDef());
 
     auto def = topMod->getDef();
-  
+
     c->setTop(topMod);
 
     if (!saveToFile(c->getGlobal(), "sb_unq1_proper_top.json", topMod)) {
@@ -510,20 +568,9 @@ TEST_CASE("Partially evaluating") {
 
   SECTION("partially evaluating switch box") {
 
-    Module* topMod = nullptr;
-
-    if (!loadFromFile(c, "sb_simplified_unq1.json", &topMod)) {
-      cout << "Could not Load from json!!" << endl;
-      c->die();
-    }
-
-    topMod = c->getGlobal()->getModule("sb_unq1");
-
-    assert(topMod != nullptr);
+    Module* topMod = loadModule(c, "sb_simplified_unq1.json", "sb_unq1");
     assert(topMod->hasDef());
-
     auto def = topMod->getDef();
-  
     c->setTop(topMod);
 
     if (!saveToFile(c->getGlobal(), "sb_unq1_proper_top.json", topMod)) {
@@ -618,7 +665,8 @@ TEST_CASE("Partially evaluating") {
     cout << "Done with configuration state" << endl;
 
     auto regMap = topState.getCircStates().back().registers;
-    
+
+    cout << "Partially evaluating the switch box" << endl;
     partiallyEvaluateCircuit(wholeTopMod, regMap);
 
     c->runPasses({"cullgraph"});
@@ -631,12 +679,9 @@ TEST_CASE("Partially evaluating") {
       c->die();
     }
 
-    // TODO: Add test of outputs, also what does 
-
     deleteContext(c);
 
-    //assert(false);
-
+    assert(false);
   }
 
   SECTION("full pe tile including connect and switch box") {
