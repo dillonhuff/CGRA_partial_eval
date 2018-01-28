@@ -423,8 +423,7 @@ Module* loadModule(CoreIR::Context* const c,
   return topMod;
 }
 
-TEST_CASE("Partially evaluating") {
-
+TEST_CASE("Simplified switch box") {
   Context* c = newContext();
 
   CoreIRLoadLibrary_rtlil(c);
@@ -493,8 +492,15 @@ TEST_CASE("Partially evaluating") {
 
   }
 
-  assert(false);
-  
+  deleteContext(c);
+}
+
+TEST_CASE("Partially evaluating") {
+
+  Context* c = newContext();
+
+  CoreIRLoadLibrary_rtlil(c);
+
   SECTION("Run switch box") {
 
     Module* topMod = loadModule(c, "sb_unq1.json", "sb_unq1"); //nullptr;

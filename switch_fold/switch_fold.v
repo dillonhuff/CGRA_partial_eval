@@ -25,7 +25,7 @@ in_3_0,
    assign config_sb = 32'h00000C00;
    
 
-   reg         out_1_0_i;
+   reg         [1:0] out_1_0_i;
    
   always @(*) begin
     case (config_sb[11:10])
