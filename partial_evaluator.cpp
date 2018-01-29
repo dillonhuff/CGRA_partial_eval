@@ -495,40 +495,41 @@ TEST_CASE("Simplified switch box") {
   deleteContext(c);
 }
 
-TEST_CASE("Registerizing switch box") {
+TEST_CASE("Registerizing switch box normal simulation") {
   Context* c = newContext();
 
   CoreIRLoadLibrary_rtlil(c);
 
-  SECTION("") {
+  //  SECTION("Loading registerized switch box") {
 
-    Module* topMod = loadModule(c, "registered_switch.json", "registered_switch");
+  Module* topMod = loadModule(c, "registered_switch.json", "registered_switch");
 
-    assert(topMod->hasDef());
+  assert(topMod->hasDef());
 
-    auto def = topMod->getDef();
+  auto def = topMod->getDef();
 
-    c->setTop(topMod);
+  c->setTop(topMod);
 
-    if (!saveToFile(c->getGlobal(), "sb_unq1_proper_top.json", topMod)) {
-      cout << "Could not save to json!!" << endl;
-      c->die();
-    }
+  if (!saveToFile(c->getGlobal(), "sb_unq1_proper_top.json", topMod)) {
+    cout << "Could not save to json!!" << endl;
+    c->die();
+  }
 
-    c->runPasses({"rungenerators",
-          "flatten",
-          "cullzexts",
-          "removeconstduplicates",
-          "packconnections",
-          "clockifyinterface"});
+  c->runPasses({"rungenerators",
+        "flatten",
+        "cullzexts",
+        "removeconstduplicates",
+        "packconnections",
+        "clockifyinterface"});
 
-    foldConstants(topMod);
+  foldConstants(topMod);
 
-    if (!saveToFile(c->getGlobal(), "sb_unq1_flat_proc.json", topMod)) {
-      cout << "Could not save to json!!" << endl;
-      c->die();
-    }
-    
+  if (!saveToFile(c->getGlobal(), "sb_unq1_flat_proc.json", topMod)) {
+    cout << "Could not save to json!!" << endl;
+    c->die();
+  }
+
+  SECTION("Simulating before partial evaluation") {
     SimulatorState topState(topMod);
 
     // cout << "topState has main clock? " << topState.hasMainClock() << endl;
@@ -568,8 +569,142 @@ TEST_CASE("Registerizing switch box") {
     topState.execute();
 
     REQUIRE(topState.getBitVec("self.out_1_0") == BitVec(16, 2));
-
   }
+
+  deleteContext(c);
+}
+
+TEST_CASE("Registerizing switch box partial evaluation") {
+
+  Context* c = newContext();
+
+  CoreIRLoadLibrary_rtlil(c);
+
+  Module* topMod = loadModule(c, "registered_switch.json", "registered_switch");
+
+  assert(topMod->hasDef());
+
+  auto def = topMod->getDef();
+
+  c->setTop(topMod);
+
+  c->runPasses({"rungenerators",
+        "flatten",
+        "cullzexts",
+        "removeconstduplicates",
+        "packconnections",
+        "clockifyinterface"});
+
+  foldConstants(topMod);
+
+  if (!saveToFile(c->getGlobal(), "sb_unq1_flat_proc.json", topMod)) {
+    cout << "Could not save to json!!" << endl;
+    c->die();
+  }
+
+  // Insert partial eval code
+  vector<Wireable*> subCircuitPorts{def->sel("self")->sel("config_addr"),
+      def->sel("self")->sel("config_data"),
+      def->sel("self")->sel("clk"),
+      def->sel("self")->sel("config_en")};
+  
+  auto subCircuitInstances =
+    extractSubcircuit(topMod, subCircuitPorts);
+
+  cout << "# of instances in subciruit = " << subCircuitInstances.size() << endl;
+
+  // Create the subcircuit for the config, this could be isolated into a function
+  addSubcircuitModule("topMod_config",
+                      topMod,
+                      subCircuitPorts,
+                      subCircuitInstances,
+                      c,
+                      c->getGlobal());
+
+  Module* topMod_conf =
+    c->getGlobal()->getModule("topMod_config");
+
+  assert(topMod_conf != nullptr);
+  assert(topMod_conf->hasDef());
+
+  deleteDeadInstances(topMod_conf);
+
+  cout << "# of instances in subcircuit after deleting dead instances = " << topMod_conf->getDef()->getInstances().size() << endl;
+
+  c->setTop(topMod_conf);
+  c->runPasses({"removeconstduplicates"}); //, "cullgraph"});
+
+  cout << "# of instances in subcircuit after deleting duplicate constants = " << topMod_conf->getDef()->getInstances().size() << endl;
+  
+  cout << "Saving the config circuit" << endl;
+  if (!saveToFile(c->getGlobal(), "topModConfig.json", topMod_conf)) {
+    cout << "Could not save to json!!" << endl;
+    c->die();
+  }
+    
+  SimulatorState topState(topMod_conf);
+
+  // cout << "topState has main clock? " << topState.hasMainClock() << endl;
+  topState.setClock("self.clk", 0, 1);
+  topState.setValue("self.config_en", BitVec(1, 1));
+    
+  BitStreamConfig bs =
+    loadConfig("./bitstream/sb_1_bitstream.bs");
+
+  cout << "Configuring pe tile" << endl;
+  for (uint i = 0; i < bs.configAddrs.size(); i++) {
+
+    cout << "Simulating config " << i << endl;
+    cout << "config addr = " << bs.configAddrs[i] << endl;
+    cout << "config data = " << bs.configDatas[i] << endl;
+
+    topState.setValue("self.config_addr", bs.configAddrs[i]);
+    topState.setValue("self.config_data", bs.configDatas[i]);
+
+    topState.execute();
+  }
+
+  Module* wholeTopMod = nullptr;
+  wholeTopMod = c->getGlobal()->getModule("registered_switch");
+  assert(wholeTopMod != nullptr);
+  c->setTop(wholeTopMod);
+
+  auto regMap = topState.getCircStates().back().registers;
+  cout << "Partially evaluating the switch box" << endl;
+  partiallyEvaluateCircuit(wholeTopMod, regMap);
+
+  cout << "Saving the partially evaluated circuit" << endl;
+  cout << "# of instances in partially evaluated circuit = " << wholeTopMod->getDef()->getInstances().size() << endl;
+  if (!saveToFile(c->getGlobal(),
+                  "registered_switch_partially_evaluated.json",
+                  wholeTopMod)) {
+    cout << "Could not save to json!!" << endl;
+    c->die();
+  }
+
+
+  SimulatorState state(wholeTopMod);
+
+  state.setClock("self.clk", 0, 1);
+  state.setValue("self.config_en", BitVec(1, 0));
+
+  state.setValue("self.in_0_0", BitVec(16, 1));
+  state.setValue("self.in_2_0", BitVec(16, 2));
+  state.setValue("self.in_3_0", BitVec(16, 3));
+  state.setValue("self.pe_output_0", BitVec(16, 34));
+    
+  state.setValue("self.config_en", BitVec(1, 0));
+  state.setValue("self.pe_output_0", BitVec(16, 34));
+
+  state.execute();
+
+  REQUIRE(state.getBitVec("self.out_1_0") == BitVec(16, 34));
+
+  state.setValue("self.pe_output_0", BitVec(16, 2));
+
+  state.execute();
+
+  REQUIRE(state.getBitVec("self.out_1_0") == BitVec(16, 2));
 
   deleteContext(c);
 }
@@ -766,7 +901,6 @@ TEST_CASE("Partially evaluating") {
 
     deleteContext(c);
 
-    assert(false);
   }
 
   SECTION("full pe tile including connect and switch box") {
@@ -897,7 +1031,6 @@ TEST_CASE("Partially evaluating") {
 
     deleteContext(c);
 
-    //assert(false);
   }
 
   SECTION("test_pe") {
