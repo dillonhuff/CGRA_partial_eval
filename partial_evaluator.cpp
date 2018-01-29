@@ -16,122 +16,6 @@
 using namespace CoreIR;
 using namespace std;
 
-std::vector<char> hexToBytes(const std::string& hex) {
-  std::vector<char> bytes;
-
-  for (unsigned int i = 0; i < hex.length(); i += 2) {
-    std::string byteString = hex.substr(i, 2);
-    char byte = (char) strtol(byteString.c_str(), NULL, 16);
-    bytes.push_back(byte);
-  }
-
-  return bytes;
-}
-
-std::vector<std::string> splitString(const std::string& str,
-                                     const std::string& delimiter) {
-    std::vector<std::string> strings;
-
-    std::string::size_type pos = 0;
-    std::string::size_type prev = 0;
-    while ((pos = str.find(delimiter, prev)) != std::string::npos)
-    {
-        strings.push_back(str.substr(prev, pos - prev));
-        prev = pos + 1;
-    }
-
-    // To get the last substring (or only, if delimiter is not found)
-    strings.push_back(str.substr(prev));
-
-    return strings;
-}
-
-BitVector hexStringToBitVector(const std::string& str) {
-  vector<char> addrBytes = hexToBytes(str);
-
-  //assert(addrBytes.size() == 4);
-  int numBits = str.size() * 4;
-
-  reverse(addrBytes);
-
-  BitVector configAddr(numBits, 0);
-
-  int offset = 0;
-  for (auto byte : addrBytes) {
-    BitVec tmp(8, byte);
-    for (uint i = 0; i < (uint) tmp.bitLength(); i++) {
-      configAddr.set(offset, tmp.get(i));
-      offset++;
-    }
-  }
-
-  assert(offset == 32);
-
-  return configAddr;
-}
-
-struct BitStreamConfig {
-  vector<BitVector> configAddrs;
-  vector<BitVector> configDatas;
-};
-
-BitStreamConfig loadConfig(const std::string& configFileName) {
-  cout << "Loading configuration state" << endl;
-
-  //configFile("./bitstream/shell_bitstream.bs")
-  std::ifstream configFile(configFileName);
-  std::string str((std::istreambuf_iterator<char>(configFile)),
-                  std::istreambuf_iterator<char>());
-
-  cout << "Config file text" << endl;
-  cout << str << endl;
-
-  auto configLines = splitString(str, "\n");
-  cout << "Config lines" << endl;
-  for (auto line : configLines) {
-    cout << "\t" << line << endl;
-  }
-
-  vector<BitVector> configDatas;
-  vector<BitVector> configAddrs;
-
-  for (auto line : configLines) {
-    auto entries = splitString(line, " ");
-
-    cout << "# of entries == " << entries.size() << endl;
-    cout << "Line = " << line << endl;
-
-    assert(entries.size() == 2);
-
-    string addrString = entries[0];
-    string dataString = entries[1];
-
-    cout << "addr string = " << addrString << endl;
-    cout << "data string = " << dataString << endl;
-
-    assert(addrString.size() == 8);
-    assert(dataString.size() == 8);
-
-    // Convert strings to bit vectors
-    vector<char> addrBytes = hexToBytes(addrString);
-    assert(addrBytes.size() == 4);
-
-    BitVector configAddr = hexStringToBitVector(addrString);
-    BitVector configData = hexStringToBitVector(dataString);
-
-    cout << "configAddr = " << configAddr << endl;
-    cout << "configData = " << configData << endl;
-
-    configAddrs.push_back(configAddr);
-    configDatas.push_back(configData);
-  }
-
-  assert(configAddrs.size() == configLines.size());
-  assert(configDatas.size() == configLines.size());
-
-  return {configAddrs, configDatas};
-}
-
 void processTop(const std::string& fileName,
                 const std::string& topModName) {
   Context* c = newContext();
@@ -369,60 +253,6 @@ void simulateConfiguredState(const std::string& fileName) {
   deleteContext(c);
 }
 
-void partiallyEvaluateCircuit(CoreIR::Module* const wholeTopMod,
-                              std::unordered_map<std::string, BitVec>& regMap) {
-  cout << "Converting " << regMap.size() << " registers to constants" << endl;
-  for (auto reg : regMap) {
-    cout << "\t" << reg.first << " ---> " << reg.second << endl;
-  }
-
-  registersToConstants(wholeTopMod, regMap);
-
-  for (auto inst : wholeTopMod->getDef()->getInstances()) {
-    cout << "\t" << inst.second->toString() << " : " << inst.second->getModuleRef()->toString() << endl;
-  }
-
-  cout << "Top module after deleting dead instances" << endl;
-  wholeTopMod->print();
-  cout << wholeTopMod->toString() << endl;
-  if (!saveToFile(wholeTopMod->getContext()->getGlobal(), "sb_unq1_registered.json", wholeTopMod)) {
-    cout << "Could not save to json!!" << endl;
-    assert(false);
-  }
-  
-  cout << "Deleting dead instances" << endl;
-  deleteDeadInstances(wholeTopMod);
-
-  cout << "# of instances partially evaluated top after deleting dead instances = " << wholeTopMod->getDef()->getInstances().size() << endl;
-
-  cout << "Folding constants to finish partial evaluation" << endl;
-  foldConstants(wholeTopMod);
-
-  cout << "Done folding constants" << endl;
-
-  deleteDeadInstances(wholeTopMod);
-
-  cout << "# of instances partially evaluated top after constant folding = " << wholeTopMod->getDef()->getInstances().size() << endl;
-
-}
-
-Module* loadModule(CoreIR::Context* const c,
-                   const std::string& fileName,
-                   const std::string& topModName) {
-  Module* topMod = nullptr;
-
-  if (!loadFromFile(c, fileName, &topMod)) {
-    cout << "Could not Load from json!!" << endl;
-    c->die();
-  }
-
-  topMod = c->getGlobal()->getModule(topModName);
-
-  assert(topMod != nullptr);
-
-  return topMod;
-}
-
 TEST_CASE("Simplified switch box") {
   Context* c = newContext();
 
@@ -574,43 +404,6 @@ TEST_CASE("Registerizing switch box normal simulation") {
   deleteContext(c);
 }
 
-Module* createSubCircuit(CoreIR::Module* const topMod,
-                         std::vector<CoreIR::Wireable*>& subCircuitPorts,
-                         std::vector<CoreIR::Instance*>& subCircuitInstances,
-                         CoreIR::Context* const c) {
-  
-  // Create the subcircuit for the config, this could be isolated into a function
-  addSubcircuitModule("topMod_config",
-                      topMod,
-                      subCircuitPorts,
-                      subCircuitInstances,
-                      c,
-                      c->getGlobal());
-
-  Module* topMod_conf =
-    c->getGlobal()->getModule("topMod_config");
-
-  assert(topMod_conf != nullptr);
-  assert(topMod_conf->hasDef());
-
-  deleteDeadInstances(topMod_conf);
-
-  cout << "# of instances in subcircuit after deleting dead instances = " << topMod_conf->getDef()->getInstances().size() << endl;
-
-  c->setTop(topMod_conf);
-  c->runPasses({"removeconstduplicates"});
-
-  cout << "# of instances in subcircuit after deleting duplicate constants = " << topMod_conf->getDef()->getInstances().size() << endl;
-  
-  cout << "Saving the config circuit" << endl;
-  if (!saveToFile(c->getGlobal(), "topModConfig.json", topMod_conf)) {
-    cout << "Could not save to json!!" << endl;
-    c->die();
-  }
-
-  return topMod_conf;
-}
-
 TEST_CASE("Registerizing switch box partial evaluation") {
 
   Context* c = newContext();
@@ -634,7 +427,7 @@ TEST_CASE("Registerizing switch box partial evaluation") {
 
   foldConstants(topMod);
 
-  if (!saveToFile(c->getGlobal(), "sb_unq1_flat_proc.json", topMod)) {
+  if (!saveToFile(c->getGlobal(), "registered_switch_proc_flat.json", topMod)) {
     cout << "Could not save to json!!" << endl;
     c->die();
   }
@@ -656,35 +449,6 @@ TEST_CASE("Registerizing switch box partial evaluation") {
                      subCircuitInstances,
                      c);
   
-  // Create the subcircuit for the config, this could be isolated into a function
-  // addSubcircuitModule("topMod_config",
-  //                     topMod,
-  //                     subCircuitPorts,
-  //                     subCircuitInstances,
-  //                     c,
-  //                     c->getGlobal());
-
-  // Module* topMod_conf =
-  //   c->getGlobal()->getModule("topMod_config");
-
-  // assert(topMod_conf != nullptr);
-  // assert(topMod_conf->hasDef());
-
-  // deleteDeadInstances(topMod_conf);
-
-  // cout << "# of instances in subcircuit after deleting dead instances = " << topMod_conf->getDef()->getInstances().size() << endl;
-
-  // c->setTop(topMod_conf);
-  // c->runPasses({"removeconstduplicates"});
-
-  // cout << "# of instances in subcircuit after deleting duplicate constants = " << topMod_conf->getDef()->getInstances().size() << endl;
-  
-  // cout << "Saving the config circuit" << endl;
-  // if (!saveToFile(c->getGlobal(), "topModConfig.json", topMod_conf)) {
-  //   cout << "Could not save to json!!" << endl;
-  //   c->die();
-  // }
-    
   SimulatorState topState(topMod_conf);
 
   // cout << "topState has main clock? " << topState.hasMainClock() << endl;
@@ -724,7 +488,6 @@ TEST_CASE("Registerizing switch box partial evaluation") {
     cout << "Could not save to json!!" << endl;
     c->die();
   }
-
 
   SimulatorState state(wholeTopMod);
 
