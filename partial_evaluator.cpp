@@ -574,6 +574,43 @@ TEST_CASE("Registerizing switch box normal simulation") {
   deleteContext(c);
 }
 
+Module* createSubCircuit(CoreIR::Module* const topMod,
+                         std::vector<CoreIR::Wireable*>& subCircuitPorts,
+                         std::vector<CoreIR::Instance*>& subCircuitInstances,
+                         CoreIR::Context* const c) {
+  
+  // Create the subcircuit for the config, this could be isolated into a function
+  addSubcircuitModule("topMod_config",
+                      topMod,
+                      subCircuitPorts,
+                      subCircuitInstances,
+                      c,
+                      c->getGlobal());
+
+  Module* topMod_conf =
+    c->getGlobal()->getModule("topMod_config");
+
+  assert(topMod_conf != nullptr);
+  assert(topMod_conf->hasDef());
+
+  deleteDeadInstances(topMod_conf);
+
+  cout << "# of instances in subcircuit after deleting dead instances = " << topMod_conf->getDef()->getInstances().size() << endl;
+
+  c->setTop(topMod_conf);
+  c->runPasses({"removeconstduplicates"});
+
+  cout << "# of instances in subcircuit after deleting duplicate constants = " << topMod_conf->getDef()->getInstances().size() << endl;
+  
+  cout << "Saving the config circuit" << endl;
+  if (!saveToFile(c->getGlobal(), "topModConfig.json", topMod_conf)) {
+    cout << "Could not save to json!!" << endl;
+    c->die();
+  }
+
+  return topMod_conf;
+}
+
 TEST_CASE("Registerizing switch box partial evaluation") {
 
   Context* c = newContext();
@@ -613,34 +650,40 @@ TEST_CASE("Registerizing switch box partial evaluation") {
 
   cout << "# of instances in subciruit = " << subCircuitInstances.size() << endl;
 
-  // Create the subcircuit for the config, this could be isolated into a function
-  addSubcircuitModule("topMod_config",
-                      topMod,
-                      subCircuitPorts,
-                      subCircuitInstances,
-                      c,
-                      c->getGlobal());
-
   Module* topMod_conf =
-    c->getGlobal()->getModule("topMod_config");
-
-  assert(topMod_conf != nullptr);
-  assert(topMod_conf->hasDef());
-
-  deleteDeadInstances(topMod_conf);
-
-  cout << "# of instances in subcircuit after deleting dead instances = " << topMod_conf->getDef()->getInstances().size() << endl;
-
-  c->setTop(topMod_conf);
-  c->runPasses({"removeconstduplicates"}); //, "cullgraph"});
-
-  cout << "# of instances in subcircuit after deleting duplicate constants = " << topMod_conf->getDef()->getInstances().size() << endl;
+    createSubCircuit(topMod,
+                     subCircuitPorts,
+                     subCircuitInstances,
+                     c);
   
-  cout << "Saving the config circuit" << endl;
-  if (!saveToFile(c->getGlobal(), "topModConfig.json", topMod_conf)) {
-    cout << "Could not save to json!!" << endl;
-    c->die();
-  }
+  // Create the subcircuit for the config, this could be isolated into a function
+  // addSubcircuitModule("topMod_config",
+  //                     topMod,
+  //                     subCircuitPorts,
+  //                     subCircuitInstances,
+  //                     c,
+  //                     c->getGlobal());
+
+  // Module* topMod_conf =
+  //   c->getGlobal()->getModule("topMod_config");
+
+  // assert(topMod_conf != nullptr);
+  // assert(topMod_conf->hasDef());
+
+  // deleteDeadInstances(topMod_conf);
+
+  // cout << "# of instances in subcircuit after deleting dead instances = " << topMod_conf->getDef()->getInstances().size() << endl;
+
+  // c->setTop(topMod_conf);
+  // c->runPasses({"removeconstduplicates"});
+
+  // cout << "# of instances in subcircuit after deleting duplicate constants = " << topMod_conf->getDef()->getInstances().size() << endl;
+  
+  // cout << "Saving the config circuit" << endl;
+  // if (!saveToFile(c->getGlobal(), "topModConfig.json", topMod_conf)) {
+  //   cout << "Could not save to json!!" << endl;
+  //   c->die();
+  // }
     
   SimulatorState topState(topMod_conf);
 
