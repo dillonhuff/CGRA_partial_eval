@@ -515,6 +515,207 @@ TEST_CASE("Registerizing switch box partial evaluation") {
   deleteContext(c);
 }
 
+TEST_CASE("Partially evaluating the entire PE") {
+
+  Context* c = newContext();
+
+  CoreIRLoadLibrary_rtlil(c);
+
+  Module* topMod = nullptr;
+
+  if (!loadFromFile(c, "pe_tile_new_unq1.json", &topMod)) {
+    cout << "Could not Load from json!!" << endl;
+    c->die();
+  }
+
+  topMod = c->getGlobal()->getModule("pe_tile_new_unq1");
+
+  assert(topMod != nullptr);
+  assert(topMod->hasDef());
+
+  auto def = topMod->getDef();
+  
+  c->setTop(topMod);
+
+  if (!saveToFile(c->getGlobal(), "pe_tile_new_unq1_proper_top.json", topMod)) {
+    cout << "Could not save to json!!" << endl;
+    c->die();
+  }
+
+  c->runPasses({"rungenerators",
+        "flatten",
+        "cullzexts",
+        "removeconstduplicates",
+        "packconnections",
+        //          "cullgraph",
+        "clockifyinterface"});
+
+  foldConstants(topMod);
+
+  if (!saveToFile(c->getGlobal(), "pe_tile_new_unq1_flat_proc.json", topMod)) {
+    cout << "Could not save to json!!" << endl;
+    c->die();
+  }
+
+  vector<Wireable*> subCircuitPorts{def->sel("self")->sel("config_addr"),
+      def->sel("self")->sel("config_data"),
+      def->sel("self")->sel("clk"),
+      def->sel("self")->sel("reset"),
+      def->sel("self")->sel("tile_id")};
+  
+  auto subCircuitInstances =
+    extractSubcircuit(topMod, subCircuitPorts);
+
+  cout << "# of instances in subciruit = " << subCircuitInstances.size() << endl;
+
+  // Create the subcircuit for the config
+  addSubcircuitModule("topMod_config",
+                      topMod,
+                      subCircuitPorts,
+                      subCircuitInstances,
+                      c,
+                      c->getGlobal());
+
+  Module* topMod_conf =
+    c->getGlobal()->getModule("topMod_config");
+
+  assert(topMod_conf != nullptr);
+  assert(topMod_conf->hasDef());
+
+  deleteDeadInstances(topMod_conf);
+
+  cout << "# of instances in subcircuit after deleting dead instances = " << topMod_conf->getDef()->getInstances().size() << endl;
+
+  c->setTop(topMod_conf);
+  c->runPasses({"removeconstduplicates"}); //, "cullgraph"});
+
+  cout << "# of instances in subcircuit after deleting duplicate constants = " << topMod_conf->getDef()->getInstances().size() << endl;
+  
+  cout << "Saving the config circuit" << endl;
+  if (!saveToFile(c->getGlobal(), "topModConfig.json", topMod_conf)) {
+    cout << "Could not save to json!!" << endl;
+    c->die();
+  }
+    
+  SimulatorState topState(topMod_conf);
+
+  // cout << "topState has main clock? " << topState.hasMainClock() << endl;
+  topState.setClock("self.clk", 0, 1);
+  topState.setValue("self.reset", BitVec(1, 0));
+  topState.setValue("self.tile_id", BitVec(16, 1));
+    
+  BitStreamConfig bs =
+    loadConfig("./bitstream/shell_bitstream.bs");
+
+  cout << "Configuring pe tile" << endl;
+  for (uint i = 0; i < bs.configAddrs.size(); i++) {
+
+    cout << "Simulating config " << i << endl;
+
+    topState.setValue("self.config_addr", bs.configAddrs[i]);
+    topState.setValue("self.config_data", bs.configDatas[i]);
+
+    topState.execute();
+    topState.execute();
+    
+  }
+
+  Module* wholeTopMod = nullptr;
+  wholeTopMod = c->getGlobal()->getModule("pe_tile_new_unq1");
+
+  assert(wholeTopMod != nullptr);
+
+  c->setTop(wholeTopMod);
+
+  cout << "Done with configuration state" << endl;
+
+  auto regMap = topState.getCircStates().back().registers;
+
+    
+  partiallyEvaluateCircuit(wholeTopMod, regMap);
+
+  c->runPasses({"cullgraph"});
+  c->runPasses({"packconnections"});
+
+  c->setTop(wholeTopMod);
+
+  if (!saveToFile(c->getGlobal(), "pe_tile_new_partially_evaluated.json", wholeTopMod)) {
+    cout << "Could not save to json!!" << endl;
+    c->die();
+  }
+
+  // TODO: Add test of outputs, also what does 
+
+  SimulatorState state(wholeTopMod);
+
+  cout << "Setting values" << endl;
+  state.setValue("self.reset", BitVec(1, 0));
+
+  state.setValue("self.config_addr", BitVec(32, 123));
+  state.setValue("self.config_data", BitVec(32, 0));
+  state.setClock("self.clk", 0, 1);
+  state.setValue("self.tile_id", BitVec(32, 1));
+
+  state.setValue("self.in_BUS16_S0_T0", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S0_T1", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S0_T2", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S0_T3", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S0_T4", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S1_T0", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S1_T1", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S1_T2", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S1_T3", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S1_T4", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S2_T0", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S2_T1", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S2_T2", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S2_T3", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S2_T4", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S3_T0", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S3_T1", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S3_T2", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S3_T3", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S3_T4", BitVec(16, 0));
+  state.setValue("self.in_BUS1_S0_T0", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S0_T1", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S0_T2", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S0_T3", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S0_T4", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S1_T0", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S1_T1", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S1_T2", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S1_T3", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S1_T4", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S2_T0", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S2_T1", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S2_T2", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S2_T3", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S2_T4", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S3_T0", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S3_T1", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S3_T2", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S3_T3", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S3_T4", BitVec(1, 0));
+
+  state.setValue("self.in_BUS16_S2_T0", BitVec(16, 34));
+
+  cout << "Executing" << endl;
+
+  state.execute();
+
+  cout << "Getting state value" << endl;
+
+  BitVec res(16, 34*2);
+  for (uint i = 0; i < res.bitLength(); i++) {
+    cout << "i = " << i << endl;
+    REQUIRE(topState.getBitVec(wholeTopMod->getDef()->sel("self")->sel("out_BUS16_S1_T0")->sel(i)) == res.get(i));
+  }
+  //REQUIRE(topState.getBitVec("self.out_BUS16_S1_T0") == BitVec(16, 34*2));
+
+  deleteContext(c);
+
+}
+
 TEST_CASE("Partially evaluating") {
 
   Context* c = newContext();
@@ -705,139 +906,6 @@ TEST_CASE("Partially evaluating") {
       c->die();
     }
 
-    deleteContext(c);
-
-  }
-
-  SECTION("full pe tile including connect and switch box") {
-    Module* topMod = nullptr;
-
-    if (!loadFromFile(c, "pe_tile_new_unq1.json", &topMod)) {
-      cout << "Could not Load from json!!" << endl;
-      c->die();
-    }
-
-    topMod = c->getGlobal()->getModule("pe_tile_new_unq1");
-
-    assert(topMod != nullptr);
-    assert(topMod->hasDef());
-
-    auto def = topMod->getDef();
-  
-    c->setTop(topMod);
-
-    if (!saveToFile(c->getGlobal(), "pe_tile_new_unq1_proper_top.json", topMod)) {
-      cout << "Could not save to json!!" << endl;
-      c->die();
-    }
-
-    c->runPasses({"rungenerators",
-          "flatten",
-          "cullzexts",
-          "removeconstduplicates",
-          "packconnections",
-          //          "cullgraph",
-          "clockifyinterface"});
-
-    foldConstants(topMod);
-
-    if (!saveToFile(c->getGlobal(), "pe_tile_new_unq1_flat_proc.json", topMod)) {
-      cout << "Could not save to json!!" << endl;
-      c->die();
-    }
-
-    vector<Wireable*> subCircuitPorts{def->sel("self")->sel("config_addr"),
-        def->sel("self")->sel("config_data"),
-        def->sel("self")->sel("clk"),
-        def->sel("self")->sel("reset"),
-        def->sel("self")->sel("tile_id")};
-  
-    auto subCircuitInstances =
-      extractSubcircuit(topMod, subCircuitPorts);
-
-    cout << "# of instances in subciruit = " << subCircuitInstances.size() << endl;
-
-    // Create the subcircuit for the config
-    addSubcircuitModule("topMod_config",
-                        topMod,
-                        subCircuitPorts,
-                        subCircuitInstances,
-                        c,
-                        c->getGlobal());
-
-    Module* topMod_conf =
-      c->getGlobal()->getModule("topMod_config");
-
-    assert(topMod_conf != nullptr);
-    assert(topMod_conf->hasDef());
-
-    deleteDeadInstances(topMod_conf);
-
-    cout << "# of instances in subcircuit after deleting dead instances = " << topMod_conf->getDef()->getInstances().size() << endl;
-
-    c->setTop(topMod_conf);
-    c->runPasses({"removeconstduplicates"}); //, "cullgraph"});
-
-    cout << "# of instances in subcircuit after deleting duplicate constants = " << topMod_conf->getDef()->getInstances().size() << endl;
-  
-    cout << "Saving the config circuit" << endl;
-    if (!saveToFile(c->getGlobal(), "topModConfig.json", topMod_conf)) {
-      cout << "Could not save to json!!" << endl;
-      c->die();
-    }
-    
-    SimulatorState topState(topMod_conf);
-
-    // cout << "topState has main clock? " << topState.hasMainClock() << endl;
-    topState.setClock("self.clk", 0, 1);
-    topState.setValue("self.reset", BitVec(1, 0));
-    topState.setValue("self.tile_id", BitVec(16, 1));
-    
-    BitStreamConfig bs =
-      loadConfig("./bitstream/shell_bitstream.bs");
-
-    cout << "Configuring pe tile" << endl;
-    for (uint i = 0; i < bs.configAddrs.size(); i++) {
-
-      cout << "Simulating config " << i << endl;
-
-      topState.setValue("self.config_addr", bs.configAddrs[i]);
-      topState.setValue("self.config_data", bs.configDatas[i]);
-
-      topState.execute();
-      topState.execute();
-    
-    }
-
-    Module* wholeTopMod = nullptr;
-    wholeTopMod = c->getGlobal()->getModule("pe_tile_new_unq1");
-
-    assert(wholeTopMod != nullptr);
-
-    c->setTop(wholeTopMod);
-
-    cout << "Done with configuration state" << endl;
-
-    auto regMap = topState.getCircStates().back().registers;
-
-    
-    partiallyEvaluateCircuit(wholeTopMod, regMap);
-
-    c->runPasses({"cullgraph"});
-    c->runPasses({"packconnections"});
-
-    c->setTop(wholeTopMod);
-
-    if (!saveToFile(c->getGlobal(), "pe_tile_new_partially_evaluated.json", wholeTopMod)) {
-      cout << "Could not save to json!!" << endl;
-      c->die();
-    }
-
-    // TODO: Add test of outputs, also what does 
-
-    SimulatorState state(wholeTopMod);
-    state.setValue("self.config_en", BitVec());
-    REQUIRE(topState.getBitVec("self.res") == BitVec(16, 72*2));
     deleteContext(c);
 
   }
