@@ -835,6 +835,9 @@ TEST_CASE("Partially evaluating") {
 
     // TODO: Add test of outputs, also what does 
 
+    SimulatorState state(wholeTopMod);
+    state.setValue("self.config_en", BitVec());
+    REQUIRE(topState.getBitVec("self.res") == BitVec(16, 72*2));
     deleteContext(c);
 
   }
