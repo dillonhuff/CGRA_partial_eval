@@ -1064,52 +1064,59 @@ TEST_CASE("Partially evaluating") {
     
   }
 
-  SECTION("test_pe_comp_unq1") {
-    Module* topMod = nullptr;
+}
 
-    if (!loadFromFile(c, "test_pe_comp_unq1.json", &topMod)) {
-      cout << "Could not Load from json!!" << endl;
-      c->die();
-    }
 
-    topMod = c->getGlobal()->getModule("test_pe_comp_unq1");
+TEST_CASE("test_pe_comp_unq1") {
 
-    assert(topMod != nullptr);
-  
-    c->setTop(topMod);
+  Context* c = newContext();
 
-    c->runPasses({"rungenerators",
-          "flatten",
-          "cullzexts",
-          "removeconstduplicates",
-          "packconnections",
-          "cullgraph",
-          "clockifyinterface"});
+  CoreIRLoadLibrary_rtlil(c);
 
-    // F1000001 00000002
-    // FF000001 0002000B
-    // 00020001 00000000
-    // 00070001 00000C00
+  Module* topMod = nullptr;
 
-    SimulatorState state(topMod);
-    state.setValue("self.op_a", BitVec(16, 7));
-    state.setValue("self.op_b", BitVec(16, 2));
-    state.setValue("self.op_code", BitVec(9, 11));
-    state.setValue("self.op_d_p", BitVec(1, 0));
-
-    state.execute();
-
-    REQUIRE(state.getBitVec("self.res") == BitVec(16, 7*2));
-
-    state.setValue("self.op_a", BitVec(16, 7));
-    state.setValue("self.op_b", BitVec(16, 2));
-    state.setValue("self.op_code", BitVec(9, 0));
-    state.setValue("self.op_d_p", BitVec(1, 0));
-
-    state.execute();
-
-    REQUIRE(state.getBitVec("self.res") == BitVec(16, 7 + 2));
-  
-    deleteContext(c);
+  if (!loadFromFile(c, "pe_tile_new_unq1.json", &topMod)) {
+    cout << "Could not Load from json!!" << endl;
+    c->die();
   }
+
+  topMod = c->getGlobal()->getModule("test_pe_comp_unq1");
+
+  assert(topMod != nullptr);
+  
+  c->setTop(topMod);
+
+  c->runPasses({"rungenerators",
+        "flatten",
+        "cullzexts",
+        "removeconstduplicates",
+        "packconnections",
+        "cullgraph",
+        "clockifyinterface"});
+
+  // F1000001 00000002
+  // FF000001 0002000B
+  // 00020001 00000000
+  // 00070001 00000C00
+
+  SimulatorState state(topMod);
+  state.setValue("self.op_a", BitVec(16, 7));
+  state.setValue("self.op_b", BitVec(16, 2));
+  state.setValue("self.op_code", BitVec(9, 11));
+  state.setValue("self.op_d_p", BitVec(1, 0));
+
+  state.execute();
+
+  REQUIRE(state.getBitVec("self.res") == BitVec(16, 7*2));
+
+  state.setValue("self.op_a", BitVec(16, 7));
+  state.setValue("self.op_b", BitVec(16, 2));
+  state.setValue("self.op_code", BitVec(9, 0));
+  state.setValue("self.op_d_p", BitVec(1, 0));
+
+  state.execute();
+
+  REQUIRE(state.getBitVec("self.res") == BitVec(16, 7 + 2));
+  
+  deleteContext(c);
 }
