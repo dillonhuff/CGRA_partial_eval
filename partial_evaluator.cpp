@@ -744,21 +744,31 @@ TEST_CASE("partially evaluate test_pe") {
     cout << "Could not save to json!!" << endl;
     c->die();
   }
-    
-  SimulatorState topState(topMod);
+
+  vector<Wireable*> subCircuitPorts{def->sel("self")->sel("clk"),
+      def->sel("self")->sel("rst_n"),
+      def->sel("self")->sel("clk_en"),
+      def->sel("self")->sel("cfg_en"),
+      def->sel("self")->sel("cfg_d"),
+      def->sel("self")->sel("cfg_a")};
+  
+
+  auto subCircuitInstances =
+    extractSubcircuit(topMod, subCircuitPorts);
+  
+  Module* topMod_conf =
+    createSubCircuit(topMod,
+                     subCircuitPorts,
+                     subCircuitInstances,
+                     c);
+
+  SimulatorState topState(topMod_conf);
 
   cout << "topState has main clock? " << topState.hasMainClock() << endl;
   topState.setClock("self.clk", 0, 1);
   topState.setValue("self.rst_n", BitVec(1, 0));
   topState.setValue("self.clk_en", BitVec(1, 1));
   topState.setValue("self.cfg_en", BitVec(1, 0));
-
-  topState.setValue("self.data0", BitVec(16, 0));
-  topState.setValue("self.data1", BitVec(16, 0));
-
-  topState.setValue("self.bit0", BitVec(1, 0));
-  topState.setValue("self.bit1", BitVec(1, 0));
-  topState.setValue("self.bit2", BitVec(1, 0));
 
   // F1000001 00000002
   // FF000001 0002000B
@@ -836,29 +846,31 @@ TEST_CASE("partially evaluate test_pe") {
 
   SimulatorState state(wholeTopMod);
 
-  topState.setValue("self.data0", BitVec(16, 3));
-  topState.setValue("self.data1", BitVec(16, 15));
+  state.setValue("self.data0", BitVec(16, 3));
+  state.setValue("self.data1", BitVec(16, 15));
 
-  topState.setValue("self.cfg_en", BitVec(1, 0));
+  state.setClock("self.clk", 0, 0);
 
-  topState.setValue("self.rst_n", BitVec(1, 0));
-  topState.setValue("self.clk_en", BitVec(1, 0));
-  topState.setValue("self.cfg_a", BitVec(8, 0));
-  topState.setValue("self.cfg_d", BitVec(32, 0));
-  topState.setValue("self.bit0", BitVec(1, 0));
-  topState.setValue("self.bit1", BitVec(1, 0));
-  topState.setValue("self.bit2", BitVec(1, 0));
+  state.setValue("self.cfg_en", BitVec(1, 0));
+
+  state.setValue("self.rst_n", BitVec(1, 0));
+  state.setValue("self.clk_en", BitVec(1, 0));
+  state.setValue("self.cfg_a", BitVec(8, 0));
+  state.setValue("self.cfg_d", BitVec(32, 0));
+  state.setValue("self.bit0", BitVec(1, 0));
+  state.setValue("self.bit1", BitVec(1, 0));
+  state.setValue("self.bit2", BitVec(1, 0));
   
-  topState.execute();
+  state.execute();
 
-  REQUIRE(topState.getBitVec("self.res") == BitVec(16, 3*2));
+  REQUIRE(state.getBitVec("self.res") == BitVec(16, 3*2));
 
-  topState.setValue("self.data0", BitVec(16, 72));
-  topState.setValue("self.data1", BitVec(16, 13));
+  state.setValue("self.data0", BitVec(16, 72));
+  state.setValue("self.data1", BitVec(16, 13));
 
-  topState.execute();
+  state.execute();
 
-  REQUIRE(topState.getBitVec("self.res") == BitVec(16, 72*2));
+  REQUIRE(state.getBitVec("self.res") == BitVec(16, 72*2));
     
   deleteContext(c);
   
