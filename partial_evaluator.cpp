@@ -278,6 +278,49 @@ TEST_CASE("Registerizing switch box partial evaluation") {
   deleteContext(c);
 }
 
+void setPEInputs(SimulatorState& state) {
+  state.setValue("self.in_BUS16_S0_T0", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S0_T1", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S0_T2", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S0_T3", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S0_T4", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S1_T0", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S1_T1", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S1_T2", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S1_T3", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S1_T4", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S2_T0", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S2_T1", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S2_T2", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S2_T3", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S2_T4", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S3_T0", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S3_T1", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S3_T2", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S3_T3", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S3_T4", BitVec(16, 0));
+  state.setValue("self.in_BUS1_S0_T0", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S0_T1", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S0_T2", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S0_T3", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S0_T4", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S1_T0", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S1_T1", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S1_T2", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S1_T3", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S1_T4", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S2_T0", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S2_T1", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S2_T2", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S2_T3", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S2_T4", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S3_T0", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S3_T1", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S3_T2", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S3_T3", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S3_T4", BitVec(1, 0));
+}
+
 TEST_CASE("Partially evaluating the entire PE") {
 
   Context* c = newContext();
@@ -310,7 +353,6 @@ TEST_CASE("Partially evaluating the entire PE") {
         "cullzexts",
         "removeconstduplicates",
         "packconnections",
-        //          "cullgraph",
         "clockifyinterface"});
 
   foldConstants(topMod);
@@ -331,41 +373,44 @@ TEST_CASE("Partially evaluating the entire PE") {
 
   cout << "# of instances in subciruit = " << subCircuitInstances.size() << endl;
 
-  // Create the subcircuit for the config
-  addSubcircuitModule("topMod_config",
-                      topMod,
-                      subCircuitPorts,
-                      subCircuitInstances,
-                      c,
-                      c->getGlobal());
+  // // Create the subcircuit for the config
+  // addSubcircuitModule("topMod_config",
+  //                     topMod,
+  //                     subCircuitPorts,
+  //                     subCircuitInstances,
+  //                     c,
+  //                     c->getGlobal());
 
-  Module* topMod_conf =
-    c->getGlobal()->getModule("topMod_config");
+  // Module* topMod_conf =
+  //   c->getGlobal()->getModule("topMod_config");
 
-  assert(topMod_conf != nullptr);
-  assert(topMod_conf->hasDef());
+  // assert(topMod_conf != nullptr);
+  // assert(topMod_conf->hasDef());
 
-  deleteDeadInstances(topMod_conf);
+  // deleteDeadInstances(topMod_conf);
 
-  cout << "# of instances in subcircuit after deleting dead instances = " << topMod_conf->getDef()->getInstances().size() << endl;
+  // cout << "# of instances in subcircuit after deleting dead instances = " << topMod_conf->getDef()->getInstances().size() << endl;
 
-  c->setTop(topMod_conf);
-  c->runPasses({"removeconstduplicates"}); //, "cullgraph"});
+  // c->setTop(topMod_conf);
+  // c->runPasses({"removeconstduplicates"});
 
-  cout << "# of instances in subcircuit after deleting duplicate constants = " << topMod_conf->getDef()->getInstances().size() << endl;
+  // cout << "# of instances in subcircuit after deleting duplicate constants = " << topMod_conf->getDef()->getInstances().size() << endl;
   
-  cout << "Saving the config circuit" << endl;
-  if (!saveToFile(c->getGlobal(), "topModConfig.json", topMod_conf)) {
-    cout << "Could not save to json!!" << endl;
-    c->die();
-  }
+  // cout << "Saving the config circuit" << endl;
+  // if (!saveToFile(c->getGlobal(), "topModConfig.json", topMod_conf)) {
+  //   cout << "Could not save to json!!" << endl;
+  //   c->die();
+  // }
     
-  SimulatorState topState(topMod_conf);
+  //SimulatorState topState(topMod_conf);
+
+  SimulatorState topState(topMod);
 
   // cout << "topState has main clock? " << topState.hasMainClock() << endl;
   topState.setClock("self.clk", 0, 1);
   topState.setValue("self.reset", BitVec(1, 0));
   topState.setValue("self.tile_id", BitVec(16, 1));
+  setPEInputs(topState);
     
   BitStreamConfig bs =
     loadConfig("./bitstream/shell_bitstream.bs");
@@ -419,46 +464,48 @@ TEST_CASE("Partially evaluating the entire PE") {
   state.setClock("self.clk", 0, 1);
   state.setValue("self.tile_id", BitVec(32, 1));
 
-  state.setValue("self.in_BUS16_S0_T0", BitVec(16, 0));
-  state.setValue("self.in_BUS16_S0_T1", BitVec(16, 0));
-  state.setValue("self.in_BUS16_S0_T2", BitVec(16, 0));
-  state.setValue("self.in_BUS16_S0_T3", BitVec(16, 0));
-  state.setValue("self.in_BUS16_S0_T4", BitVec(16, 0));
-  state.setValue("self.in_BUS16_S1_T0", BitVec(16, 0));
-  state.setValue("self.in_BUS16_S1_T1", BitVec(16, 0));
-  state.setValue("self.in_BUS16_S1_T2", BitVec(16, 0));
-  state.setValue("self.in_BUS16_S1_T3", BitVec(16, 0));
-  state.setValue("self.in_BUS16_S1_T4", BitVec(16, 0));
-  state.setValue("self.in_BUS16_S2_T0", BitVec(16, 0));
-  state.setValue("self.in_BUS16_S2_T1", BitVec(16, 0));
-  state.setValue("self.in_BUS16_S2_T2", BitVec(16, 0));
-  state.setValue("self.in_BUS16_S2_T3", BitVec(16, 0));
-  state.setValue("self.in_BUS16_S2_T4", BitVec(16, 0));
-  state.setValue("self.in_BUS16_S3_T0", BitVec(16, 0));
-  state.setValue("self.in_BUS16_S3_T1", BitVec(16, 0));
-  state.setValue("self.in_BUS16_S3_T2", BitVec(16, 0));
-  state.setValue("self.in_BUS16_S3_T3", BitVec(16, 0));
-  state.setValue("self.in_BUS16_S3_T4", BitVec(16, 0));
-  state.setValue("self.in_BUS1_S0_T0", BitVec(1, 0));
-  state.setValue("self.in_BUS1_S0_T1", BitVec(1, 0));
-  state.setValue("self.in_BUS1_S0_T2", BitVec(1, 0));
-  state.setValue("self.in_BUS1_S0_T3", BitVec(1, 0));
-  state.setValue("self.in_BUS1_S0_T4", BitVec(1, 0));
-  state.setValue("self.in_BUS1_S1_T0", BitVec(1, 0));
-  state.setValue("self.in_BUS1_S1_T1", BitVec(1, 0));
-  state.setValue("self.in_BUS1_S1_T2", BitVec(1, 0));
-  state.setValue("self.in_BUS1_S1_T3", BitVec(1, 0));
-  state.setValue("self.in_BUS1_S1_T4", BitVec(1, 0));
-  state.setValue("self.in_BUS1_S2_T0", BitVec(1, 0));
-  state.setValue("self.in_BUS1_S2_T1", BitVec(1, 0));
-  state.setValue("self.in_BUS1_S2_T2", BitVec(1, 0));
-  state.setValue("self.in_BUS1_S2_T3", BitVec(1, 0));
-  state.setValue("self.in_BUS1_S2_T4", BitVec(1, 0));
-  state.setValue("self.in_BUS1_S3_T0", BitVec(1, 0));
-  state.setValue("self.in_BUS1_S3_T1", BitVec(1, 0));
-  state.setValue("self.in_BUS1_S3_T2", BitVec(1, 0));
-  state.setValue("self.in_BUS1_S3_T3", BitVec(1, 0));
-  state.setValue("self.in_BUS1_S3_T4", BitVec(1, 0));
+  setPEInputs(state);
+
+  // state.setValue("self.in_BUS16_S0_T0", BitVec(16, 0));
+  // state.setValue("self.in_BUS16_S0_T1", BitVec(16, 0));
+  // state.setValue("self.in_BUS16_S0_T2", BitVec(16, 0));
+  // state.setValue("self.in_BUS16_S0_T3", BitVec(16, 0));
+  // state.setValue("self.in_BUS16_S0_T4", BitVec(16, 0));
+  // state.setValue("self.in_BUS16_S1_T0", BitVec(16, 0));
+  // state.setValue("self.in_BUS16_S1_T1", BitVec(16, 0));
+  // state.setValue("self.in_BUS16_S1_T2", BitVec(16, 0));
+  // state.setValue("self.in_BUS16_S1_T3", BitVec(16, 0));
+  // state.setValue("self.in_BUS16_S1_T4", BitVec(16, 0));
+  // state.setValue("self.in_BUS16_S2_T0", BitVec(16, 0));
+  // state.setValue("self.in_BUS16_S2_T1", BitVec(16, 0));
+  // state.setValue("self.in_BUS16_S2_T2", BitVec(16, 0));
+  // state.setValue("self.in_BUS16_S2_T3", BitVec(16, 0));
+  // state.setValue("self.in_BUS16_S2_T4", BitVec(16, 0));
+  // state.setValue("self.in_BUS16_S3_T0", BitVec(16, 0));
+  // state.setValue("self.in_BUS16_S3_T1", BitVec(16, 0));
+  // state.setValue("self.in_BUS16_S3_T2", BitVec(16, 0));
+  // state.setValue("self.in_BUS16_S3_T3", BitVec(16, 0));
+  // state.setValue("self.in_BUS16_S3_T4", BitVec(16, 0));
+  // state.setValue("self.in_BUS1_S0_T0", BitVec(1, 0));
+  // state.setValue("self.in_BUS1_S0_T1", BitVec(1, 0));
+  // state.setValue("self.in_BUS1_S0_T2", BitVec(1, 0));
+  // state.setValue("self.in_BUS1_S0_T3", BitVec(1, 0));
+  // state.setValue("self.in_BUS1_S0_T4", BitVec(1, 0));
+  // state.setValue("self.in_BUS1_S1_T0", BitVec(1, 0));
+  // state.setValue("self.in_BUS1_S1_T1", BitVec(1, 0));
+  // state.setValue("self.in_BUS1_S1_T2", BitVec(1, 0));
+  // state.setValue("self.in_BUS1_S1_T3", BitVec(1, 0));
+  // state.setValue("self.in_BUS1_S1_T4", BitVec(1, 0));
+  // state.setValue("self.in_BUS1_S2_T0", BitVec(1, 0));
+  // state.setValue("self.in_BUS1_S2_T1", BitVec(1, 0));
+  // state.setValue("self.in_BUS1_S2_T2", BitVec(1, 0));
+  // state.setValue("self.in_BUS1_S2_T3", BitVec(1, 0));
+  // state.setValue("self.in_BUS1_S2_T4", BitVec(1, 0));
+  // state.setValue("self.in_BUS1_S3_T0", BitVec(1, 0));
+  // state.setValue("self.in_BUS1_S3_T1", BitVec(1, 0));
+  // state.setValue("self.in_BUS1_S3_T2", BitVec(1, 0));
+  // state.setValue("self.in_BUS1_S3_T3", BitVec(1, 0));
+  // state.setValue("self.in_BUS1_S3_T4", BitVec(1, 0));
 
   state.setValue("self.in_BUS16_S2_T0", BitVec(16, 34));
 
@@ -745,26 +792,6 @@ TEST_CASE("partially evaluate test_pe") {
     c->die();
   }
 
-  // Config ports affect the values of all registers, so maybe:
-  // Simulate the config on the *whole* circuit
-  // Then: Replace all registers defined by config ports with constants
-  //       Set the values of all other registers to the values in the current
-  //       circuit
-  // vector<Wireable*> constantPorts{def->sel("self")->sel("rst_n")};
-  // vector<Wireable*> sharedPorts{def->sel("self")->sel("clk_en"),
-  //     def->sel("self")->sel("clk_en")};
-
-  // vector<Wireable*> dataPorts{def->sel("self")->sel("bit0"),
-  //     def->sel("self")->sel("bit1"),
-  //     def->sel("self")->sel("bit2"),
-  //     def->sel("self")->sel("data0"),
-  //     def->sel("self")->sel("data1")}
-
-  // vector<Wireable*> configPorts{def->sel("self")->sel("clk"),
-  //     def->sel("self")->sel("cfg_en"),
-  //     def->sel("self")->sel("cfg_d"),
-  //     def->sel("self")->sel("cfg_a")};
-
   vector<Wireable*> subCircuitPorts{def->sel("self")->sel("clk"),
       def->sel("self")->sel("rst_n"),
       def->sel("self")->sel("clk_en"),
@@ -772,26 +799,10 @@ TEST_CASE("partially evaluate test_pe") {
       def->sel("self")->sel("cfg_d"),
       def->sel("self")->sel("cfg_a")};
 
-      // // Add all ports as an experiment
-      // def->sel("self")->sel("bit0"),
-      // def->sel("self")->sel("bit1"),
-      // def->sel("self")->sel("bit2"),
-
-      // def->sel("self")->sel("data0"),
-      // def->sel("self")->sel("data1")
-      // };
-  
-
   auto subCircuitInstances =
     extractSubcircuit(topMod, subCircuitPorts);
   
-  // Module* topMod_conf =
-  //   createSubCircuit(topMod,
-  //                    subCircuitPorts,
-  //                    subCircuitInstances,
-  //                    c);
-
-  SimulatorState topState(topMod); //topMod_conf);
+  SimulatorState topState(topMod);
 
   cout << "topState has main clock? " << topState.hasMainClock() << endl;
   topState.setClock("self.clk", 0, 1);
@@ -806,11 +817,6 @@ TEST_CASE("partially evaluate test_pe") {
   topState.setValue("self.data0", BitVec(16, 0));
   topState.setValue("self.data1", BitVec(16, 0));
 
-  // F1000001 00000002
-  // FF000001 0002000B
-  // 00020001 00000000
-  // 00070001 00000C00
-    
   BitStreamConfig bs =
     loadConfig("./bitstream/shell_bitstream.bs");
 
