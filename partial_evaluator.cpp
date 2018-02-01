@@ -705,7 +705,7 @@ TEST_CASE("Partially evaluating") {
 }
 
 
-TEST_CASE("test_pe") {
+TEST_CASE("partially evaluate test_pe") {
 
   Context* c = newContext();
 
@@ -714,6 +714,166 @@ TEST_CASE("test_pe") {
   Module* topMod = nullptr;
 
   if (!loadFromFile(c, "pe_tile_new_unq1.json", &topMod)) {//"test_pe_unq1.json", &topMod)) {
+    cout << "Could not Load from json!!" << endl;
+    c->die();
+  }
+
+  topMod = c->getGlobal()->getModule("test_pe_unq1");
+
+  assert(topMod != nullptr);
+  assert(topMod->hasDef());
+
+  auto def = topMod->getDef();
+  
+  c->setTop(topMod);
+
+  if (!saveToFile(c->getGlobal(), "test_pe_unq1_proper_top.json", topMod)) {
+    cout << "Could not save to json!!" << endl;
+    c->die();
+  }
+
+  c->runPasses({"rungenerators",
+        "flatten",
+        "cullzexts",
+        "removeconstduplicates",
+        "packconnections",
+        "clockifyinterface"});
+
+  foldConstants(topMod);
+
+  if (!saveToFile(c->getGlobal(), "test_pe_unq1_flat_proc.json", topMod)) {
+    cout << "Could not save to json!!" << endl;
+    c->die();
+  }
+    
+  SimulatorState topState(topMod);
+
+  cout << "topState has main clock? " << topState.hasMainClock() << endl;
+  topState.setClock("self.clk", 0, 1);
+  topState.setValue("self.rst_n", BitVec(1, 0));
+  topState.setValue("self.clk_en", BitVec(1, 1));
+  topState.setValue("self.cfg_en", BitVec(1, 0));
+
+  topState.setValue("self.data0", BitVec(16, 0));
+  topState.setValue("self.data1", BitVec(16, 0));
+
+  topState.setValue("self.bit0", BitVec(1, 0));
+  topState.setValue("self.bit1", BitVec(1, 0));
+  topState.setValue("self.bit2", BitVec(1, 0));
+
+  // F1000001 00000002
+  // FF000001 0002000B
+  // 00020001 00000000
+  // 00070001 00000C00
+    
+  BitStreamConfig bs =
+    loadConfig("./bitstream/shell_bitstream.bs");
+
+  BitVec tileId(16, 1);
+    
+  cout << "Configuring pe tile" << endl;
+  for (uint i = 0; i < bs.configAddrs.size(); i++) {
+
+      
+    cout << "Simulating config " << i << endl;
+
+
+    BitVec cfg_id(16, 0);
+    for (int j = 0; j < 16; j++) {
+      cfg_id.set(j, bs.configAddrs[i].get(j));
+    }
+
+    bool configTile = true;
+    for (int j = 16; j < 24; j++) {
+      if (bs.configAddrs[i].get(j) == 1) {
+        configTile = false;
+      }
+    }
+
+    if (configTile && (cfg_id == tileId)) {
+      cout << "Configuring tile, addr = " << bs.configAddrs[i] << ", data = " <<
+        bs.configDatas[i] << endl;
+
+      topState.setValue("self.cfg_en", BitVec(1, 1));
+    } else {
+      topState.setValue("self.cfg_en", BitVec(1, 0));
+    }
+      
+    BitVec cfg_a(8, 0);
+    for (int j = 0; j < 8; j++) {
+      cfg_a.set(j, bs.configAddrs[i].get(j + 24));
+    }
+
+    topState.setValue("self.cfg_a", cfg_a);
+    topState.setValue("self.cfg_d", bs.configDatas[i]);
+
+    topState.execute();
+    topState.execute();
+    
+  }
+
+  
+  // cout << "Done with configuration state" << endl;
+
+  Module* wholeTopMod = nullptr;
+  wholeTopMod = c->getGlobal()->getModule("test_pe_unq1");
+
+  assert(wholeTopMod != nullptr);
+
+  c->setTop(wholeTopMod);
+
+  cout << "Done with configuration state" << endl;
+
+  auto regMap = topState.getCircStates().back().registers;
+
+  partiallyEvaluateCircuit(wholeTopMod, regMap);
+
+  // c->runPasses({"packconnections"});
+  // c->runPasses({"deletedeadinstances"});
+
+  wholeTopMod->print();
+
+  // assert(false);
+
+  SimulatorState state(wholeTopMod);
+
+  topState.setValue("self.data0", BitVec(16, 3));
+  topState.setValue("self.data1", BitVec(16, 15));
+
+  topState.setValue("self.cfg_en", BitVec(1, 0));
+
+  topState.setValue("self.rst_n", BitVec(1, 0));
+  topState.setValue("self.clk_en", BitVec(1, 0));
+  topState.setValue("self.cfg_a", BitVec(8, 0));
+  topState.setValue("self.cfg_d", BitVec(32, 0));
+  topState.setValue("self.bit0", BitVec(1, 0));
+  topState.setValue("self.bit1", BitVec(1, 0));
+  topState.setValue("self.bit2", BitVec(1, 0));
+  
+  topState.execute();
+
+  REQUIRE(topState.getBitVec("self.res") == BitVec(16, 3*2));
+
+  topState.setValue("self.data0", BitVec(16, 72));
+  topState.setValue("self.data1", BitVec(16, 13));
+
+  topState.execute();
+
+  REQUIRE(topState.getBitVec("self.res") == BitVec(16, 72*2));
+    
+  deleteContext(c);
+  
+}
+
+TEST_CASE("test_pe") {
+
+  Context* c = newContext();
+
+  CoreIRLoadLibrary_rtlil(c);
+    
+  Module* topMod = nullptr;
+
+  if (!loadFromFile(c, "pe_tile_new_unq1.json", &topMod)) {
     cout << "Could not Load from json!!" << endl;
     c->die();
   }
@@ -830,7 +990,18 @@ TEST_CASE("test_pe") {
   topState.execute();
 
   REQUIRE(topState.getBitVec("self.res") == BitVec(16, 72*2));
-    
+
+  auto valMap = topState.getCircStates().back().valMap;
+  cout << "test_pe value after execution" << endl;
+  for (auto val : valMap) {
+    cout << "\t" << val.first->toString();
+    if (val.second->getType() == SIM_VALUE_BV) {
+      cout << " ---> " << static_cast<SimBitVector*>(val.second)->getBits() << endl;
+    } else {
+      cout << " ---> " << "clk" << endl;
+    }
+  }
+  
   deleteContext(c);
     
 }
