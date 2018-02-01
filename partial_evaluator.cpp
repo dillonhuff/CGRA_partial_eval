@@ -837,8 +837,8 @@ TEST_CASE("partially evaluate test_pe") {
 
   partiallyEvaluateCircuit(wholeTopMod, regMap);
 
-  // c->runPasses({"packconnections"});
-  // c->runPasses({"deletedeadinstances"});
+  c->runPasses({"packconnections"});
+  c->runPasses({"deletedeadinstances"});
 
   wholeTopMod->print();
 
@@ -849,7 +849,7 @@ TEST_CASE("partially evaluate test_pe") {
   state.setValue("self.data0", BitVec(16, 3));
   state.setValue("self.data1", BitVec(16, 15));
 
-  state.setClock("self.clk", 0, 0);
+  state.setClock("self.clk", 0, 1);
 
   state.setValue("self.cfg_en", BitVec(1, 0));
 
