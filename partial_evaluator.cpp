@@ -750,7 +750,16 @@ TEST_CASE("partially evaluate test_pe") {
       def->sel("self")->sel("clk_en"),
       def->sel("self")->sel("cfg_en"),
       def->sel("self")->sel("cfg_d"),
-      def->sel("self")->sel("cfg_a")};
+      def->sel("self")->sel("cfg_a"),
+
+      // Add all ports as an experiment
+      def->sel("self")->sel("bit0"),
+      def->sel("self")->sel("bit1"),
+      def->sel("self")->sel("bit2"),
+
+      def->sel("self")->sel("data0"),
+      def->sel("self")->sel("data1")
+      };
   
 
   auto subCircuitInstances =
@@ -769,6 +778,14 @@ TEST_CASE("partially evaluate test_pe") {
   topState.setValue("self.rst_n", BitVec(1, 0));
   topState.setValue("self.clk_en", BitVec(1, 1));
   topState.setValue("self.cfg_en", BitVec(1, 0));
+
+  topState.setValue("self.bit0", BitVec(1, 0));
+  topState.setValue("self.bit1", BitVec(1, 0));
+  topState.setValue("self.bit2", BitVec(1, 0));
+
+  
+  topState.setValue("self.data0", BitVec(16, 0));
+  topState.setValue("self.data1", BitVec(16, 0));
 
   // F1000001 00000002
   // FF000001 0002000B
