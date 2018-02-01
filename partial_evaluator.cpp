@@ -745,33 +745,53 @@ TEST_CASE("partially evaluate test_pe") {
     c->die();
   }
 
+  // Config ports affect the values of all registers, so maybe:
+  // Simulate the config on the *whole* circuit
+  // Then: Replace all registers defined by config ports with constants
+  //       Set the values of all other registers to the values in the current
+  //       circuit
+  // vector<Wireable*> constantPorts{def->sel("self")->sel("rst_n")};
+  // vector<Wireable*> sharedPorts{def->sel("self")->sel("clk_en"),
+  //     def->sel("self")->sel("clk_en")};
+
+  // vector<Wireable*> dataPorts{def->sel("self")->sel("bit0"),
+  //     def->sel("self")->sel("bit1"),
+  //     def->sel("self")->sel("bit2"),
+  //     def->sel("self")->sel("data0"),
+  //     def->sel("self")->sel("data1")}
+
+  // vector<Wireable*> configPorts{def->sel("self")->sel("clk"),
+  //     def->sel("self")->sel("cfg_en"),
+  //     def->sel("self")->sel("cfg_d"),
+  //     def->sel("self")->sel("cfg_a")};
+
   vector<Wireable*> subCircuitPorts{def->sel("self")->sel("clk"),
       def->sel("self")->sel("rst_n"),
       def->sel("self")->sel("clk_en"),
       def->sel("self")->sel("cfg_en"),
       def->sel("self")->sel("cfg_d"),
-      def->sel("self")->sel("cfg_a"),
+      def->sel("self")->sel("cfg_a")};
 
-      // Add all ports as an experiment
-      def->sel("self")->sel("bit0"),
-      def->sel("self")->sel("bit1"),
-      def->sel("self")->sel("bit2"),
+      // // Add all ports as an experiment
+      // def->sel("self")->sel("bit0"),
+      // def->sel("self")->sel("bit1"),
+      // def->sel("self")->sel("bit2"),
 
-      def->sel("self")->sel("data0"),
-      def->sel("self")->sel("data1")
-      };
+      // def->sel("self")->sel("data0"),
+      // def->sel("self")->sel("data1")
+      // };
   
 
   auto subCircuitInstances =
     extractSubcircuit(topMod, subCircuitPorts);
   
-  Module* topMod_conf =
-    createSubCircuit(topMod,
-                     subCircuitPorts,
-                     subCircuitInstances,
-                     c);
+  // Module* topMod_conf =
+  //   createSubCircuit(topMod,
+  //                    subCircuitPorts,
+  //                    subCircuitInstances,
+  //                    c);
 
-  SimulatorState topState(topMod_conf);
+  SimulatorState topState(topMod); //topMod_conf);
 
   cout << "topState has main clock? " << topState.hasMainClock() << endl;
   topState.setClock("self.clk", 0, 1);
@@ -782,7 +802,6 @@ TEST_CASE("partially evaluate test_pe") {
   topState.setValue("self.bit0", BitVec(1, 0));
   topState.setValue("self.bit1", BitVec(1, 0));
   topState.setValue("self.bit2", BitVec(1, 0));
-
   
   topState.setValue("self.data0", BitVec(16, 0));
   topState.setValue("self.data1", BitVec(16, 0));
@@ -838,7 +857,6 @@ TEST_CASE("partially evaluate test_pe") {
     
   }
 
-  
   // cout << "Done with configuration state" << endl;
 
   Module* wholeTopMod = nullptr;
@@ -850,7 +868,25 @@ TEST_CASE("partially evaluate test_pe") {
 
   cout << "Done with configuration state" << endl;
 
-  auto regMap = topState.getCircStates().back().registers;
+  auto regMapAll = topState.getCircStates().back().registers;
+  unordered_map<string, BitVec> regMap;
+  unordered_map<string, BitVec> mixedRegs;
+
+  cout << "Splitting up registers" << endl;
+  for (auto reg : regMapAll) {
+    cout << reg.first << endl;
+    Instance* regInst = def->getInstances()[reg.first];
+
+    cout << "\t" << regInst->toString() << endl;
+
+    if (elem(regInst, subCircuitInstances)) {
+      cout << " is a pure config register" << endl;
+      regMap.insert(reg);
+    } else {
+      cout << " is a mixed register" << endl;
+      mixedRegs.insert(reg);
+    }
+  }
 
   partiallyEvaluateCircuit(wholeTopMod, regMap);
 
@@ -862,6 +898,9 @@ TEST_CASE("partially evaluate test_pe") {
   // assert(false);
 
   SimulatorState state(wholeTopMod);
+  for (auto reg : mixedRegs) {
+    state.setRegister(reg.first, reg.second);
+  }
 
   state.setValue("self.data0", BitVec(16, 3));
   state.setValue("self.data1", BitVec(16, 15));
@@ -880,12 +919,16 @@ TEST_CASE("partially evaluate test_pe") {
   
   state.execute();
 
+  cout << "test_pe res = " << state.getBitVec("self.res") << endl;
+
   REQUIRE(state.getBitVec("self.res") == BitVec(16, 3*2));
 
   state.setValue("self.data0", BitVec(16, 72));
   state.setValue("self.data1", BitVec(16, 13));
 
   state.execute();
+
+  cout << "test_pe res = " << state.getBitVec("self.res") << endl;
 
   REQUIRE(state.getBitVec("self.res") == BitVec(16, 72*2));
     
