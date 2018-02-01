@@ -704,7 +704,6 @@ TEST_CASE("Partially evaluating") {
 
 }
 
-
 TEST_CASE("partially evaluate test_pe") {
 
   Context* c = newContext();
@@ -922,16 +921,11 @@ TEST_CASE("test_pe") {
   topState.setValue("self.bit1", BitVec(1, 0));
   topState.setValue("self.bit2", BitVec(1, 0));
 
-  // F1000001 00000002
-  // FF000001 0002000B
-  // 00020001 00000000
-  // 00070001 00000C00
-    
   BitStreamConfig bs =
     loadConfig("./bitstream/shell_bitstream.bs");
 
   BitVec tileId(16, 1);
-    
+
   cout << "Configuring pe tile" << endl;
   for (uint i = 0; i < bs.configAddrs.size(); i++) {
 
