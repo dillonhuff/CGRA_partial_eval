@@ -371,7 +371,7 @@ TEST_CASE("Partially evaluating the entire PE") {
   auto subCircuitInstances =
     extractSubcircuit(topMod, subCircuitPorts);
 
-  cout << "# of instances in subciruit = " << subCircuitInstances.size() << endl;
+  cout << "# of instances in subcircuit = " << subCircuitInstances.size() << endl;
 
   // // Create the subcircuit for the config
   // addSubcircuitModule("topMod_config",
@@ -427,6 +427,8 @@ TEST_CASE("Partially evaluating the entire PE") {
     topState.execute();
     
   }
+
+  assert(false);
 
   Module* wholeTopMod = nullptr;
   wholeTopMod = c->getGlobal()->getModule("pe_tile_new_unq1");
