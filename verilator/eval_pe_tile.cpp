@@ -57,17 +57,26 @@ int main() {
 
   Module* topMod_conf =
     c->getGlobal()->getModule("topMod_config");
+
+  // CoreIRLoadVerilog_coreir(c);
+  // CoreIRLoadVerilog_corebit(c);
   
-  // Lots of outputs here, need to create a new module with all pe_tiles?
-
   // Write this out as verilog
-  c->runPasses({"verilog"});
 
-  auto vpass = static_cast<Passes::Verilog*>(c->getPassManager()->getAnalysisPass("verilog"));
+  if (!saveToFile(c->getGlobal(), "topMod_config.json", topMod_conf)) {
+    cout << "Could not save to json!!" << endl;
+    c->die();
+  }
 
-  std::ofstream sout("topMod_config.v");
-  vpass->writeToStream(sout);
-  sout.close();
+  system("coreir -i topMod_config.json -o topMod_config.v");
+
+  // c->runPasses({"verilog"});
+
+  // auto vpass = static_cast<Passes::Verilog*>(c->getPassManager()->getAnalysisPass("verilog"));
+
+  // std::ofstream sout("topMod_config.v");
+  // vpass->writeToStream(sout);
+  // sout.close();
 
   // Run the verilog
 
