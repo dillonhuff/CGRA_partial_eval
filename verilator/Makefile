@@ -7,7 +7,8 @@ clean:
 	rm -f partial_evaluator
 
 verilog:
-	verilator -O3 -x-assign fast -noassert -Wall -Wno-DECLFILENAME --cc topMod_config.v --exe verilator_main.cpp --top-module topMod_config -CFLAGS -O3 -CFLAGS -march=native
+	# Add Optimizations later!
+	verilator -Wall -Wno-fatal -Wno-DECLFILENAME --cc topMod_config.v --exe verilator_main.cpp --top-module topMod_config -CFLAGS -O3 -CFLAGS -march=native
 	make OPT_FAST="-O3" -C obj_dir -j -f VtopMod_config.mk VtopMod_config
 	./obj_dir/VtopMod_config
 

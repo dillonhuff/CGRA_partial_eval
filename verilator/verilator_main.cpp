@@ -2,7 +2,7 @@
 #include <ctime>
 #include <cstdlib>
 
-#include "VDesignTop.h"
+#include "VtopMod_config.h"
 #include "verilated.h"
 
 using namespace std;
