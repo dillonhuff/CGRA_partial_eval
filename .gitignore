@@ -1,3 +1,8 @@
 *~
 *.json
 partial_evaluator
+
+*.v
+*.txt
+/verilator/pe_eval
+/pe_verilog/goto-line

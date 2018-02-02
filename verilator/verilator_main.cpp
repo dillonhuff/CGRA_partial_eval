@@ -13,4 +13,10 @@ int main(int argc, char** argv) {
 
   // Read in config bitstream
 
+  // Run config on the circuit
+
+  // Write out the register values
+
+  // 
+
 }
