@@ -30,6 +30,34 @@ int main() {
   foldConstants(topMod);
 
   // Add outputs for all registers
+  vector<Wireable*> ports;
+  for (auto port : topMod->getDef()->sel("self")->getSelects()) {
+    if (port.second->getType()->getDir() == Type::DK_Out) {
+      ports.push_back(port.second);
+    }
+  }
+
+  cout << "All ports" << endl;
+  for (auto pt : ports) {
+    cout << "\t" << pt->toString() << endl;
+  }
+
+  auto subCircuitInstances =
+    extractSubcircuit(topMod, ports);
+
+  cout << "# of instances in subcircuit = " << subCircuitInstances.size() << endl;
+
+  // Create the subcircuit for the config
+  addSubcircuitModule("topMod_config",
+                      topMod,
+                      ports,
+                      subCircuitInstances,
+                      c,
+                      c->getGlobal());
+
+  Module* topMod_conf =
+    c->getGlobal()->getModule("topMod_config");
+  
   // Lots of outputs here, need to create a new module with all pe_tiles?
 
   // Write this out as verilog
@@ -37,7 +65,7 @@ int main() {
 
   auto vpass = static_cast<Passes::Verilog*>(c->getPassManager()->getAnalysisPass("verilog"));
 
-  std::ofstream sout("pe_tile_new_unq1.v");
+  std::ofstream sout("topMod_config.v");
   vpass->writeToStream(sout);
   sout.close();
 
