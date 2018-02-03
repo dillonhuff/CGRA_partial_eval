@@ -11,6 +11,48 @@
 using namespace CoreIR;
 using namespace std;
 
+void setPEInputs(SimulatorState& state) {
+  state.setValue("self.in_BUS16_S0_T0", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S0_T1", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S0_T2", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S0_T3", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S0_T4", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S1_T0", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S1_T1", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S1_T2", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S1_T3", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S1_T4", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S2_T0", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S2_T1", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S2_T2", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S2_T3", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S2_T4", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S3_T0", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S3_T1", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S3_T2", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S3_T3", BitVec(16, 0));
+  state.setValue("self.in_BUS16_S3_T4", BitVec(16, 0));
+  state.setValue("self.in_BUS1_S0_T0", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S0_T1", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S0_T2", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S0_T3", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S0_T4", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S1_T0", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S1_T1", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S1_T2", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S1_T3", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S1_T4", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S2_T0", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S2_T1", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S2_T2", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S2_T3", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S2_T4", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S3_T0", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S3_T1", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S3_T2", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S3_T3", BitVec(1, 0));
+  state.setValue("self.in_BUS1_S3_T4", BitVec(1, 0));
+}
 
 int main() {
 
@@ -86,7 +128,8 @@ int main() {
     if ((getQualifiedOpName(*inst) == "coreir.reg") ||
         (getQualifiedOpName(*inst) == "coreir.regrst") ||
         (getQualifiedOpName(*inst) == "corebit.dff")) {
-      outFile << "cout << \"" << inst->toString() << "\" << \" \" << (int) top->" << inst->toString() << "_subcircuit_out << endl;\n" << endl;
+      uint width = inst->getModuleRef()->getGenArgs().at("width")->get<int>();
+      outFile << "  outstream << \"" << inst->toString() << " " << width << "\" << \" \" << (int) top->" << inst->toString() << "_subcircuit_out << endl;\n" << endl;
     }
   }
 
@@ -102,45 +145,89 @@ int main() {
 
   // Read the register values back in
 
-//   outstream << std::hex << (int) top->testpetestoptregaDOLLARprocdffDOLLAR1147reg0_subcircuit_out << endl;
-//   outstream << std::hex << (int) top->testpetestoptregbDOLLARprocdffDOLLAR1147reg0_subcircuit_out << endl;
+  std::ifstream rv("./config_register_values.txt");
+  std::string regVals((std::istreambuf_iterator<char>(rv)),
+                      std::istreambuf_iterator<char>());
 
-//   outstream.close();
-  
+  unordered_map<string, BitVec> regMapAll;  
 
-// }
-  
-  // // Load registers from verilog here
-  // unordered_map<string, BitVec> regMap;
-  // unordered_map<string, BitVec> mixedRegs;
+  auto allStrs = splitStr(regVals, "\n");
 
-  // cout << "Splitting up registers" << endl;
-  // for (auto reg : regMapAll) {
-  //   cout << reg.first << endl;
-  //   Instance* regInst = def->getInstances()[reg.first];
+  for (uint i = 0; i < allStrs.size() - 1; i++) {
+    auto str = allStrs[i];
+    cout << str << endl;
 
-  //   cout << "\t" << regInst->toString() << endl;
+    auto strs = splitStr(str, " ");
 
-  //   if (elem(regInst, subCircuitInstances)) {
-  //     cout << " is a pure config register" << endl;
-  //     regMap.insert(reg);
-  //   } else {
-  //     cout << " is a mixed register" << endl;
-  //     mixedRegs.insert(reg);
-  //   }
-  // }
+    assert((strs.size() == 3)); // || (strs.size() == 0));
 
-  // Module* wholeTopMod = topMod;
-  // // Partially evaluate the circuit given the registers
-  // partiallyEvaluateCircuit(wholeTopMod, regMap);
+    if (strs.size() == 3) {
+      string name = strs[0];
+      int len = stoi(strs[1]);
+      long int value = stoi(strs[2]);
+      regMapAll.insert({name, BitVec(len, value)});
+    }
+  }
 
-  // c->runPasses({"packconnections"});
-  // c->runPasses({"deletedeadinstances"});
+  // Load registers from verilog here
+  unordered_map<string, BitVec> regMap;
+  unordered_map<string, BitVec> mixedRegs;
 
-  // // Simulate with the other register defaults
-  // SimulatorState state(wholeTopMod);
-  // for (auto reg : mixedRegs) {
-  //   state.setRegister(reg.first, reg.second);
-  // }
+  cout << "Splitting up registers" << endl;
+  for (auto reg : regMapAll) {
+    cout << reg.first << endl;
+    Instance* regInst = topMod->getDef()->getInstances()[reg.first];
+
+    cout << "\t" << regInst->toString() << endl;
+
+    if (elem(regInst, subCircuitInstances)) {
+      cout << " is a pure config register" << endl;
+      regMap.insert(reg);
+    } else {
+      cout << " is a mixed register" << endl;
+      mixedRegs.insert(reg);
+    }
+  }
+
+  Module* wholeTopMod = topMod;
+  // Partially evaluate the circuit given the registers
+  partiallyEvaluateCircuit(wholeTopMod, regMap);
+
+  c->runPasses({"packconnections"});
+  c->runPasses({"deletedeadinstances"});
+
+  // Simulate with the other register defaults
+  SimulatorState state(wholeTopMod);
+
+  setPEInputs(state);
+
+  for (auto reg : mixedRegs) {
+    state.setRegister(reg.first, reg.second);
+  }
+
+  state.setClock("self.clk", 0, 0);
+  state.setValue("self.reset", BitVec(1, 0));
+  state.setValue("self.tile_id", BitVec(16, 1));
+  state.setValue("self.config_addr", BitVec(32, 0));
+  state.setValue("self.config_data", BitVec(32, 0));
+
+  state.setValue("self.in_BUS16_S2_T0", BitVec(16, 34));
+
+  state.execute();
+
+  cout << "self.out_BUS16_S1_T0 = " << state.getBitVec("self.out_BUS16_S1_T0") << endl;
+
+  assert(state.getBitVec("self.out_BUS16_S1_T0") ==
+         mul_general_width_bv(BitVec(16, 34), BitVec(16, 2)));
+
+  // Another test
+  state.setValue("self.in_BUS16_S2_T0", BitVec(16, 3));
+
+  state.execute();
+
+  cout << "self.out_BUS16_S1_T0 = " << state.getBitVec("self.out_BUS16_S1_T0") << endl;
+
+  assert(state.getBitVec("self.out_BUS16_S1_T0") ==
+         mul_general_width_bv(BitVec(16, 3), BitVec(16, 2)));
 
 }
