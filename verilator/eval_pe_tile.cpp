@@ -71,22 +71,30 @@ int main() {
 
   system("coreir -i topMod_config.json -o topMod_config.v");
 
-  // c->runPasses({"verilog"});
+  // Write out the verilog main
 
-  // auto vpass = static_cast<Passes::Verilog*>(c->getPassManager()->getAnalysisPass("verilog"));
+  std::ifstream t("../verilator_main_template.cpp");
+  std::string ts((std::istreambuf_iterator<char>(t)),
+                         std::istreambuf_iterator<char>());  
+  
+  ofstream outFile("verilator_main.cpp");
+  outFile << ts << endl;
+  outFile.close();
 
-  // std::ofstream sout("topMod_config.v");
-  // vpass->writeToStream(sout);
-  // sout.close();
+  int res = system("make verilog");
 
-  // Run the verilog
-
-  // Q: What happens in the verilog main file?
+  assert(res == 0);
 
   // Read the register values back in
 
-  // Split up registers
+//   outstream << std::hex << (int) top->testpetestoptregaDOLLARprocdffDOLLAR1147reg0_subcircuit_out << endl;
+//   outstream << std::hex << (int) top->testpetestoptregbDOLLARprocdffDOLLAR1147reg0_subcircuit_out << endl;
 
+//   outstream.close();
+  
+
+// }
+  
   // // Load registers from verilog here
   // unordered_map<string, BitVec> regMap;
   // unordered_map<string, BitVec> mixedRegs;
