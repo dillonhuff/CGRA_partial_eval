@@ -73,12 +73,27 @@ int main() {
 
   // Write out the verilog main
 
-  std::ifstream t("../verilator_main_template.cpp");
+  std::ifstream t("./verilator_main_template.cpp");
   std::string ts((std::istreambuf_iterator<char>(t)),
-                         std::istreambuf_iterator<char>());  
+                 std::istreambuf_iterator<char>());
   
   ofstream outFile("verilator_main.cpp");
   outFile << ts << endl;
+
+  for (auto instR : topMod_conf->getDef()->getInstances()) {
+    Instance* inst = instR.second;
+
+    if ((getQualifiedOpName(*inst) == "coreir.reg") ||
+        (getQualifiedOpName(*inst) == "coreir.regrst") ||
+        (getQualifiedOpName(*inst) == "corebit.dff")) {
+      outFile << "cout << \"" << inst->toString() << "\" << \" \" << (int) top->" << inst->toString() << "_subcircuit_out << endl;\n" << endl;
+    }
+  }
+
+  outFile << "  outstream.close();\n" << endl;
+
+  outFile << "\n}\n" << endl;
+
   outFile.close();
 
   int res = system("make verilog");
