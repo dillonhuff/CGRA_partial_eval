@@ -82,8 +82,8 @@ int main(int argc, char** argv) {
   }
 
   cout << "Top registers" << endl;
-  cout << std::hex << (int) top->test_pe__024test_opt_reg_d__024___05FDOLLAR___05Fprocdff___05FDOLLAR___05F1148__024reg0_subcircuit_out << endl;
-  cout << std::hex << (int) top->test_pe__024test_opt_reg_b__024___05FDOLLAR___05Fprocdff___05FDOLLAR___05F1147__024reg0_subcircuit_out << endl;
+  // cout << std::hex << (int) top->test_pe__DOLLAR__test_opt_reg_a__DOLLAR____DOLLAR__procdff__DOLLAR__1147__DOLLAR__reg0_subcircuit_out << endl;
+  // cout << std::hex << (int) top->test_pe__DOLLAR__test_opt_reg_b__DOLLAR____DOLLAR__procdff__DOLLAR__1147__DOLLAR__reg0_subcircuit_out << endl;
   
   // Write out the register values
 

@@ -25,6 +25,7 @@ int main() {
         "cullzexts",
         "removeconstduplicates",
         "packconnections",
+        "sanitize-names",
         "clockifyinterface"});
 
   foldConstants(topMod);
