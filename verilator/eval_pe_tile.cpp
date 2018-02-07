@@ -196,14 +196,30 @@ int main() {
   c->runPasses({"packconnections"});
   c->runPasses({"deletedeadinstances"});
 
+  // This should be a verilog testbench
+  if (!saveToFile(c->getGlobal(), "mul_2_pe.json", wholeTopMod)) {
+    cout << "Could not save to json!!" << endl;
+    c->die();
+  }
+
+  int make_verilog_res = system("coreir -i mul_2_pe.json -o mul_2_pe.v");
+
+  assert(make_verilog_res == 0);
+
+  int verilator_res = system("make verilog_res");
+
+  assert(verilator_res == 0);
+  //
+
   // Simulate with the other register defaults
   SimulatorState state(wholeTopMod);
 
   setPEInputs(state);
 
-  for (auto reg : mixedRegs) {
-    state.setRegister(reg.first, reg.second);
-  }
+  // // This should be changed to setting different register defaults
+  // for (auto reg : mixedRegs) {
+  //   state.setRegister(reg.first, reg.second);
+  // }
 
   state.setClock("self.clk", 0, 0);
   state.setValue("self.reset", BitVec(1, 0));
