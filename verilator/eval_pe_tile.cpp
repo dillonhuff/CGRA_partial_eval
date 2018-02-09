@@ -111,7 +111,9 @@ int main() {
     c->die();
   }
 
-  system("coreir -i topMod_config.json -o topMod_config.v");
+  int verilog_convert = system("coreir -i topMod_config.json -o topMod_config.v");
+
+  assert(verilog_convert == 0);
 
   // Write out the verilog main
 
@@ -191,9 +193,20 @@ int main() {
 
   Module* wholeTopMod = topMod;
   // Partially evaluate the circuit given the registers
-  partiallyEvaluateCircuit(wholeTopMod, regMap);
+  //partiallyEvaluateCircuit(wholeTopMod, regMap);
 
-  c->runPasses({"packconnections"});
+  portToConstant("config_addr", BitVec(32, 0), topMod);
+  portToConstant("config_data", BitVec(32, 0), topMod);
+  portToConstant("reset", BitVec(1, 0), topMod);
+  for (auto reg : regMapAll) {
+    setRegisterInit(reg.first, reg.second, topMod);
+  }
+
+  // Important: Make sure all connections make sense
+  bool error = topMod->getDef()->validate();
+  assert(!error);
+
+  c->runPasses({"fold-constants", "packconnections"});
   c->runPasses({"deletedeadinstances"});
 
   // This should be a verilog testbench
@@ -209,41 +222,40 @@ int main() {
   int verilator_res = system("make verilog_res");
 
   assert(verilator_res == 0);
-  //
 
   // Simulate with the other register defaults
-  SimulatorState state(wholeTopMod);
+  // SimulatorState state(wholeTopMod);
 
-  setPEInputs(state);
+  // setPEInputs(state);
 
-  // // This should be changed to setting different register defaults
+  // // // This should be changed to setting different register defaults
   // for (auto reg : mixedRegs) {
   //   state.setRegister(reg.first, reg.second);
   // }
 
-  state.setClock("self.clk", 0, 0);
-  state.setValue("self.reset", BitVec(1, 0));
-  state.setValue("self.tile_id", BitVec(16, 1));
-  state.setValue("self.config_addr", BitVec(32, 0));
-  state.setValue("self.config_data", BitVec(32, 0));
+  // state.setClock("self.clk", 0, 0);
+  // state.setValue("self.reset", BitVec(1, 0));
+  // state.setValue("self.tile_id", BitVec(16, 1));
+  // state.setValue("self.config_addr", BitVec(32, 0));
+  // state.setValue("self.config_data", BitVec(32, 0));
 
-  state.setValue("self.in_BUS16_S2_T0", BitVec(16, 34));
+  // state.setValue("self.in_BUS16_S2_T0", BitVec(16, 34));
 
-  state.execute();
+  // state.execute();
 
-  cout << "self.out_BUS16_S1_T0 = " << state.getBitVec("self.out_BUS16_S1_T0") << endl;
+  // cout << "self.out_BUS16_S1_T0 = " << state.getBitVec("self.out_BUS16_S1_T0") << endl;
 
-  assert(state.getBitVec("self.out_BUS16_S1_T0") ==
-         mul_general_width_bv(BitVec(16, 34), BitVec(16, 2)));
+  // assert(state.getBitVec("self.out_BUS16_S1_T0") ==
+  //        mul_general_width_bv(BitVec(16, 34), BitVec(16, 2)));
 
-  // Another test
-  state.setValue("self.in_BUS16_S2_T0", BitVec(16, 3));
+  // // Another test
+  // state.setValue("self.in_BUS16_S2_T0", BitVec(16, 3));
 
-  state.execute();
+  // state.execute();
 
-  cout << "self.out_BUS16_S1_T0 = " << state.getBitVec("self.out_BUS16_S1_T0") << endl;
+  // cout << "self.out_BUS16_S1_T0 = " << state.getBitVec("self.out_BUS16_S1_T0") << endl;
 
-  assert(state.getBitVec("self.out_BUS16_S1_T0") ==
-         mul_general_width_bv(BitVec(16, 3), BitVec(16, 2)));
+  // assert(state.getBitVec("self.out_BUS16_S1_T0") ==
+  //        mul_general_width_bv(BitVec(16, 3), BitVec(16, 2)));
 
 }
