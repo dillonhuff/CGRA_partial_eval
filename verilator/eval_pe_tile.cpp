@@ -172,24 +172,24 @@ int main() {
   }
 
   // Load registers from verilog here
-  unordered_map<string, BitVec> regMap;
-  unordered_map<string, BitVec> mixedRegs;
+  // unordered_map<string, BitVec> regMap;
+  // unordered_map<string, BitVec> mixedRegs;
 
-  cout << "Splitting up registers" << endl;
-  for (auto reg : regMapAll) {
-    cout << reg.first << endl;
-    Instance* regInst = topMod->getDef()->getInstances()[reg.first];
+  // cout << "Splitting up registers" << endl;
+  // for (auto reg : regMapAll) {
+  //   cout << reg.first << endl;
+  //   Instance* regInst = topMod->getDef()->getInstances()[reg.first];
 
-    cout << "\t" << regInst->toString() << endl;
+  //   cout << "\t" << regInst->toString() << endl;
 
-    if (elem(regInst, subCircuitInstances)) {
-      cout << " is a pure config register" << endl;
-      regMap.insert(reg);
-    } else {
-      cout << " is a mixed register" << endl;
-      mixedRegs.insert(reg);
-    }
-  }
+  //   if (elem(regInst, subCircuitInstances)) {
+  //     cout << " is a pure config register" << endl;
+  //     regMap.insert(reg);
+  //   } else {
+  //     cout << " is a mixed register" << endl;
+  //     mixedRegs.insert(reg);
+  //   }
+  // }
 
   Module* wholeTopMod = topMod;
   // Partially evaluate the circuit given the registers
