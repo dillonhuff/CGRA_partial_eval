@@ -192,9 +192,11 @@ int main() {
   // }
 
   Module* wholeTopMod = topMod;
+  c->setTop(wholeTopMod);
   // Partially evaluate the circuit given the registers
   //partiallyEvaluateCircuit(wholeTopMod, regMap);
 
+  portToConstant("tile_id", BitVec(16, 1), topMod);
   portToConstant("config_addr", BitVec(32, 0), topMod);
   portToConstant("config_data", BitVec(32, 0), topMod);
   portToConstant("reset", BitVec(1, 0), topMod);
@@ -206,6 +208,14 @@ int main() {
   bool error = topMod->getDef()->validate();
   assert(!error);
 
+  c->runPasses({"packconnections"});
+
+  // This should be a verilog testbench
+  if (!saveToFile(c->getGlobal(), "mul_2_pe_pre_evaluation.json", wholeTopMod)) {
+    cout << "Could not save to json!!" << endl;
+    c->die();
+  }
+  
   c->runPasses({"fold-constants", "packconnections"});
   c->runPasses({"deletedeadinstances"});
 
