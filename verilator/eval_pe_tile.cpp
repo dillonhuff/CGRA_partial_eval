@@ -67,6 +67,7 @@ int main() {
         "flatten",
         "removeconstduplicates",
         "sanitize-names",
+        "deletedeadinstances",
         "clockifyinterface"});
 
   foldConstants(topMod);
@@ -110,12 +111,13 @@ int main() {
     c->die();
   }
 
+  cout << "Saving to verilog" << endl;
   int verilog_convert = system("coreir -i topMod_config.json -o topMod_config.v");
 
   assert(verilog_convert == 0);
 
   // Write out the verilog main
-
+  cout << "Writing out to verilator" << endl;
   std::ifstream t("./verilator_main_template.cpp");
   std::string ts((std::istreambuf_iterator<char>(t)),
                  std::istreambuf_iterator<char>());
