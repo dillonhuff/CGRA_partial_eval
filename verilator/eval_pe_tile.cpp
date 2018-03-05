@@ -61,12 +61,11 @@ int main() {
 
   CoreIRLoadLibrary_rtlil(c);
 
-  Module* topMod = loadModule(c, "pe_tile_new_unq1.json", "pe_tile_new_unq1");
+  //Module* topMod = loadModule(c, "pe_tile_new_unq1.json", "pe_tile_new_unq1");
+  Module* topMod = loadModule(c, "top_proc.json", "top");
   c->runPasses({"rungenerators",
         "flatten",
-        "cullzexts",
         "removeconstduplicates",
-        "packconnections",
         "sanitize-names",
         "clockifyinterface"});
 
@@ -211,10 +210,10 @@ int main() {
   c->runPasses({"packconnections"});
 
   // This should be a verilog testbench
-  if (!saveToFile(c->getGlobal(), "mul_2_pe_pre_evaluation.json", wholeTopMod)) {
-    cout << "Could not save to json!!" << endl;
-    c->die();
-  }
+  // if (!saveToFile(c->getGlobal(), "mul_2_pe_pre_evaluation.json", wholeTopMod)) {
+  //   cout << "Could not save to json!!" << endl;
+  //   c->die();
+  // }
   
   c->runPasses({"fold-constants", "packconnections"});
   c->runPasses({"deletedeadinstances"});
