@@ -150,9 +150,13 @@ int main() {
   //   cout << "Could not save to json!!" << endl;
   //   c->die();
   // }
-  
+
+  cout << "# of instances in top before after folding constants = " << topMod->getDef()->getInstances().size() << endl;  
+
   c->runPasses({"fold-constants", "packconnections"});
   c->runPasses({"deletedeadinstances"});
+
+  cout << "# of instances in top after folding constants = " << topMod->getDef()->getInstances().size() << endl;
 
   // This should be a verilog testbench
   if (!saveToFile(c->getGlobal(), "mul_2_pe.json", wholeTopMod)) {
