@@ -24,7 +24,7 @@ int main(int argc, char** argv) {
   cout << "ConfigBits = " << endl << configBits << endl;
   // Run config on the circuit
 
-  top->clk = 0;
+  top->clk_in = 0;
   top->tile_id = 1;
   top->reset = 0;
 
@@ -73,10 +73,10 @@ int main(int argc, char** argv) {
 
     top->config_addr = configAddr; // Insert config
     top->config_data = configData; // Insert data
-    top->clk = 0;
+    top->clk_in = 0;
     top->eval();
     
-    top->clk = 1;
+    top->clk_in = 1;
     top->eval();
 
   }

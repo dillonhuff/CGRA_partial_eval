@@ -7,13 +7,13 @@ using namespace std;
 
 int main() {
   Vpe_tile_new_unq1* tile = new Vpe_tile_new_unq1();
-  tile->clk = 0;
+  tile->clk_in = 0;
   tile->tile_id = 1;
   tile->reset = 0;
   tile->eval();
 
 
-  tile->clk = 1;
+  tile->clk_in = 1;
   tile->config_addr = 0;
   tile->config_data = 0;
 

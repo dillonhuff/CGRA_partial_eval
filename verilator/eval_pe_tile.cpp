@@ -19,9 +19,10 @@ int main() {
   CoreIRLoadLibrary_rtlil(c);
 
   //Module* topMod = loadModule(c, "pe_tile_new_unq1.json", "pe_tile_new_unq1");
-  Module* topMod = loadModule(c, "top_proc.json", "top");
+  //Module* topMod = loadModule(c, "top_proc.json", "top");
+  Module* topMod = loadModule(c, "pe_hwmaster_03_07_2018.json", "pe_tile_new_unq1");
   c->runPasses({"rungenerators",
-        "add-dummy-inputs",
+        //"add-dummy-inputs",
         "flatten",
         "removeconstduplicates",
         "sanitize-names",
