@@ -17,7 +17,8 @@ int main(int argc, char** argv) {
   VtopMod_config* top = new VtopMod_config;
 
   // Read in config bitstream
-  std::ifstream t("../bitstream/shell_bitstream.bs");
+  //std::ifstream t("../bitstream/shell_bitstream.bs");
+  std::ifstream t("../bitstream/hwmaster_pw2_sixteen.bsa");
   std::string configBits((std::istreambuf_iterator<char>(t)),
                          std::istreambuf_iterator<char>());  
 
@@ -25,7 +26,13 @@ int main(int argc, char** argv) {
   // Run config on the circuit
 
   top->clk_in = 0;
-  top->tile_id = 1;
+  top->tile_id = 0x15;
+  top->reset = 1;
+
+  top->eval();
+  
+  top->clk_in = 0;
+  top->tile_id = 0x15;
   top->reset = 0;
 
   top->eval();
