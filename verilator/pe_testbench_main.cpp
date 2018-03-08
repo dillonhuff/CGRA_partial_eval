@@ -19,9 +19,51 @@ int main() {
 
   tile->in_BUS16_S2_T0 = 4;
 
+  tile->in_BUS16_S0_T0 = 4;
+  tile->in_BUS16_S0_T1 = 4;
+  tile->in_BUS16_S0_T2 = 4;
+  tile->in_BUS16_S0_T3 = 4;
+  tile->in_BUS16_S0_T4 = 4;
+  tile->in_BUS16_S1_T0 = 4;
+  tile->in_BUS16_S1_T1 = 4;
+  tile->in_BUS16_S1_T2 = 4;
+  tile->in_BUS16_S1_T3 = 4;
+  tile->in_BUS16_S1_T4 = 4;
+  tile->in_BUS16_S2_T0 = 4;
+  tile->in_BUS16_S2_T1 = 4;
+  tile->in_BUS16_S2_T2 = 4;
+  tile->in_BUS16_S2_T3 = 4;
+  tile->in_BUS16_S2_T4 = 4;
+  tile->in_BUS16_S3_T0 = 4;
+  tile->in_BUS16_S3_T1 = 4;
+  tile->in_BUS16_S3_T2 = 4;
+  tile->in_BUS16_S3_T3 = 4;
+  tile->in_BUS16_S3_T4 = 4;
+  
   tile->eval();
 
-  cout << "tile->out_BUS16_S1_T0 == " << tile->out_BUS16_S1_T0 << endl;
+  cout << tile->out_BUS16_S0_T0 << endl;
+  cout << tile->out_BUS16_S0_T1 << endl;
+  cout << tile->out_BUS16_S0_T2 << endl;
+  cout << tile->out_BUS16_S0_T3 << endl;
+  cout << tile->out_BUS16_S0_T4 << endl;
+  cout << tile->out_BUS16_S1_T0 << endl;
+  cout << tile->out_BUS16_S1_T1 << endl;
+  cout << tile->out_BUS16_S1_T2 << endl;
+  cout << tile->out_BUS16_S1_T3 << endl;
+  cout << tile->out_BUS16_S1_T4 << endl;
+  cout << tile->out_BUS16_S2_T0 << endl;
+  cout << tile->out_BUS16_S2_T1 << endl;
+  cout << tile->out_BUS16_S2_T2 << endl;
+  cout << tile->out_BUS16_S2_T3 << endl;
+  cout << tile->out_BUS16_S2_T4 << endl;
+  cout << tile->out_BUS16_S3_T0 << endl;
+  cout << tile->out_BUS16_S3_T1 << endl;
+  cout << tile->out_BUS16_S3_T2 << endl;
+  cout << tile->out_BUS16_S3_T3 << endl;
+  cout << tile->out_BUS16_S3_T4 << endl;
+  
+  //cout << "tile->out_BUS16_S1_T0 == " << tile->out_BUS16_S1_T0 << endl;
 
   assert(tile->out_BUS16_S1_T0 == 4*2);
 

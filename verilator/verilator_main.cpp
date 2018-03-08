@@ -37,7 +37,6 @@ int main(int argc, char** argv) {
 
   top->eval();
 
-
   std::vector<std::string> strings;
 
   std::string::size_type pos = 0;

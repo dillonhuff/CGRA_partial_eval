@@ -26,11 +26,16 @@ int main(int argc, char** argv) {
   // Run config on the circuit
 
   top->clk_in = 0;
-  top->tile_id = 15;
+  top->tile_id = 0x15;
+  top->reset = 1;
+
+  top->eval();
+  
+  top->clk_in = 0;
+  top->tile_id = 0x15;
   top->reset = 0;
 
   top->eval();
-
 
   std::vector<std::string> strings;
 
