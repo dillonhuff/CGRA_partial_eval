@@ -27,6 +27,7 @@ int main() {
         "removeconstduplicates",
         "sanitize-names",
         "deletedeadinstances",
+        "packconnections",
         "cullzexts"});
 
   foldConstants(topMod);
@@ -131,13 +132,16 @@ int main() {
   Module* wholeTopMod = topMod;
   c->setTop(wholeTopMod);
 
+  cout << "# of instances in top before setting ports to constants = " << topMod->getDef()->getInstances().size() << endl;  
+  
   portToConstant("tile_id", BitVec(16, 1), topMod);
   portToConstant("config_addr", BitVec(32, 0), topMod);
   portToConstant("config_data", BitVec(32, 0), topMod);
   portToConstant("reset", BitVec(1, 0), topMod);
-  for (auto reg : regMapAll) {
-    setRegisterInit(reg.first, reg.second, topMod);
-  }
+  partiallyEvaluateCircuit(topMod, regMapAll);
+  // for (auto reg : regMapAll) {
+  //   setRegisterInit(reg.first, reg.second, topMod);
+  // }
 
   // Important: Make sure all connections make sense
   bool error = topMod->getDef()->validate();

@@ -17,28 +17,28 @@ int main() {
   tile->config_addr = 0;
   tile->config_data = 0;
 
-  tile->in_BUS16_S2_T0 = 4;
+  tile->in_BUS16_S2_T0 = 34;
 
-  tile->in_BUS16_S0_T0 = 4;
-  tile->in_BUS16_S0_T1 = 4;
-  tile->in_BUS16_S0_T2 = 4;
-  tile->in_BUS16_S0_T3 = 4;
-  tile->in_BUS16_S0_T4 = 4;
-  tile->in_BUS16_S1_T0 = 4;
-  tile->in_BUS16_S1_T1 = 4;
-  tile->in_BUS16_S1_T2 = 4;
-  tile->in_BUS16_S1_T3 = 4;
-  tile->in_BUS16_S1_T4 = 4;
-  tile->in_BUS16_S2_T0 = 4;
-  tile->in_BUS16_S2_T1 = 4;
-  tile->in_BUS16_S2_T2 = 4;
-  tile->in_BUS16_S2_T3 = 4;
-  tile->in_BUS16_S2_T4 = 4;
-  tile->in_BUS16_S3_T0 = 4;
-  tile->in_BUS16_S3_T1 = 4;
-  tile->in_BUS16_S3_T2 = 4;
-  tile->in_BUS16_S3_T3 = 4;
-  tile->in_BUS16_S3_T4 = 4;
+  tile->in_BUS16_S0_T0 = 34;
+  tile->in_BUS16_S0_T1 = 34;
+  tile->in_BUS16_S0_T2 = 34;
+  tile->in_BUS16_S0_T3 = 34;
+  tile->in_BUS16_S0_T4 = 34;
+  tile->in_BUS16_S1_T0 = 34;
+  tile->in_BUS16_S1_T1 = 34;
+  tile->in_BUS16_S1_T2 = 34;
+  tile->in_BUS16_S1_T3 = 34;
+  tile->in_BUS16_S1_T4 = 34;
+  tile->in_BUS16_S2_T0 = 34;
+  tile->in_BUS16_S2_T1 = 34;
+  tile->in_BUS16_S2_T2 = 34;
+  tile->in_BUS16_S2_T3 = 34;
+  tile->in_BUS16_S2_T4 = 34;
+  tile->in_BUS16_S3_T0 = 34;
+  tile->in_BUS16_S3_T1 = 34;
+  tile->in_BUS16_S3_T2 = 34;
+  tile->in_BUS16_S3_T3 = 34;
+  tile->in_BUS16_S3_T4 = 34;
   
   tile->eval();
 
