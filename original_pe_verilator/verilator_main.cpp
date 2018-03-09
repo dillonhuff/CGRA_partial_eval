@@ -17,13 +17,11 @@ int main(int argc, char** argv) {
   Vpe_tile_new_unq1* top = new Vpe_tile_new_unq1;
 
   // Read in config bitstream
-  //std::ifstream t("../bitstream/shell_bitstream.bs");
   std::ifstream t("../bitstream/hwmaster_pw2_sixteen.bsa");
   std::string configBits((std::istreambuf_iterator<char>(t)),
                          std::istreambuf_iterator<char>());  
 
   cout << "ConfigBits = " << endl << configBits << endl;
-  // Run config on the circuit
 
   top->clk_in = 0;
   top->tile_id = 0x15;
@@ -99,7 +97,7 @@ int main(int argc, char** argv) {
   top->config_addr = 0;
   top->config_data = 0;
 
-  int top_val = 34;
+  int top_val = 5;
 
   top->in_BUS16_S2_T0 = top_val;
 
@@ -161,10 +159,8 @@ int main(int argc, char** argv) {
   cout << top->out_BUS16_S3_T2 << endl;
   cout << top->out_BUS16_S3_T3 << endl;
   cout << top->out_BUS16_S3_T4 << endl;
-  
-  //cout << "top->out_BUS16_S1_T0 == " << top->out_BUS16_S1_T0 << endl;
 
-  assert(top->out_BUS16_S1_T0 == top_val*2);
+  assert(top->out_BUS16_S3_T4 == top_val*2);
+  assert(top->out_BUS16_S0_T0 == top_val*2);
 
 }
-
