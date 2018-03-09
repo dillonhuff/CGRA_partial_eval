@@ -58,9 +58,6 @@ int main(int argc, char** argv) {
 
   for (int i = 0; i < strings.size(); i++) {
 
-    top->clk_in = 0;
-    top->eval();
-
     cout << "Evaluating " << i << endl;
 
     string addrStr = strings[i].substr(0, 8);
@@ -90,80 +87,6 @@ int main(int argc, char** argv) {
 
   }
 
-  top->clk_in = 0;
-  top->tile_id = 0;
-  top->eval();
-
-
-  top->clk_in = 1;
-  top->config_addr = 0;
-  top->config_data = 0;
-
-  top->in_BUS16_S2_T0 = 34;
-
-  top->in_BUS16_S0_T0 = 34;
-  top->in_BUS16_S0_T1 = 34;
-  top->in_BUS16_S0_T2 = 34;
-  top->in_BUS16_S0_T3 = 34;
-  top->in_BUS16_S0_T4 = 34;
-  top->in_BUS16_S1_T0 = 34;
-  top->in_BUS16_S1_T1 = 34;
-  top->in_BUS16_S1_T2 = 34;
-  top->in_BUS16_S1_T3 = 34;
-  top->in_BUS16_S1_T4 = 34;
-  top->in_BUS16_S2_T0 = 34;
-  top->in_BUS16_S2_T1 = 34;
-  top->in_BUS16_S2_T2 = 34;
-  top->in_BUS16_S2_T3 = 34;
-  top->in_BUS16_S2_T4 = 34;
-  top->in_BUS16_S3_T0 = 34;
-  top->in_BUS16_S3_T1 = 34;
-  top->in_BUS16_S3_T2 = 34;
-  top->in_BUS16_S3_T3 = 34;
-  top->in_BUS16_S3_T4 = 34;
-  
-  top->eval();
-
-  top->clk_in = 0;
-  top->eval();
-
-  top->clk_in = 1;
-  top->eval();
-
-  top->clk_in = 0;
-  top->eval();
-
-  top->clk_in = 1;
-  top->eval();
-
-  top->clk_in = 0;
-  top->eval();
-  
-  cout << top->out_BUS16_S0_T0 << endl;
-  cout << top->out_BUS16_S0_T1 << endl;
-  cout << top->out_BUS16_S0_T2 << endl;
-  cout << top->out_BUS16_S0_T3 << endl;
-  cout << top->out_BUS16_S0_T4 << endl;
-  cout << top->out_BUS16_S1_T0 << endl;
-  cout << top->out_BUS16_S1_T1 << endl;
-  cout << top->out_BUS16_S1_T2 << endl;
-  cout << top->out_BUS16_S1_T3 << endl;
-  cout << top->out_BUS16_S1_T4 << endl;
-  cout << top->out_BUS16_S2_T0 << endl;
-  cout << top->out_BUS16_S2_T1 << endl;
-  cout << top->out_BUS16_S2_T2 << endl;
-  cout << top->out_BUS16_S2_T3 << endl;
-  cout << top->out_BUS16_S2_T4 << endl;
-  cout << top->out_BUS16_S3_T0 << endl;
-  cout << top->out_BUS16_S3_T1 << endl;
-  cout << top->out_BUS16_S3_T2 << endl;
-  cout << top->out_BUS16_S3_T3 << endl;
-  cout << top->out_BUS16_S3_T4 << endl;
-  
-  //cout << "top->out_BUS16_S1_T0 == " << top->out_BUS16_S1_T0 << endl;
-
-  assert(top->out_BUS16_S1_T0 == 4*2);
-  
   // Write out the register values
   cout << "Top registers" << endl;
   ofstream outstream("config_register_values.txt");
