@@ -58,6 +58,9 @@ int main(int argc, char** argv) {
 
   for (int i = 0; i < strings.size(); i++) {
 
+    top->clk_in = 0;
+    top->eval();
+
     cout << "Evaluating " << i << endl;
 
     string addrStr = strings[i].substr(0, 8);
@@ -88,8 +91,7 @@ int main(int argc, char** argv) {
   }
 
   top->clk_in = 0;
-  top->tile_id = 1;
-  top->reset = 0;
+  top->tile_id = 0;
   top->eval();
 
 
@@ -122,6 +124,21 @@ int main(int argc, char** argv) {
   
   top->eval();
 
+  top->clk_in = 0;
+  top->eval();
+
+  top->clk_in = 1;
+  top->eval();
+
+  top->clk_in = 0;
+  top->eval();
+
+  top->clk_in = 1;
+  top->eval();
+
+  top->clk_in = 0;
+  top->eval();
+  
   cout << top->out_BUS16_S0_T0 << endl;
   cout << top->out_BUS16_S0_T1 << endl;
   cout << top->out_BUS16_S0_T2 << endl;
