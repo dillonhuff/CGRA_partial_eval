@@ -6,3 +6,5 @@ partial_evaluator
 *.txt
 /verilator/pe_eval
 /pe_verilog/goto-line
+*/obj_dir/
+*.out
