@@ -66,7 +66,7 @@ assign data_in_le       = load | (mode == REG_DELAY) |
                           ((mode == REG_VALID) & clk_en);
 
 always_ff @(posedge clk or negedge rst_n) begin
-  if(~rst_n) begin
+  if(!rst_n) begin
     data_in_reg <= 'h0;
   end else if(data_in_le) begin
     data_in_reg <= data_in_reg_next;
