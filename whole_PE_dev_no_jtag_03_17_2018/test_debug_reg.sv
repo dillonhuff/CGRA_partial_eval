@@ -57,7 +57,7 @@ always_ff @(posedge cfg_clk or negedge cfg_rst_n) begin
   end
 end
 
-assign debug_irq = (data_in === debug_val);
+   assign debug_irq = (data_in == debug_val);
 
 logic [15:0] nc_cfg_d;
 assign nc_cfg_d = cfg_d;
