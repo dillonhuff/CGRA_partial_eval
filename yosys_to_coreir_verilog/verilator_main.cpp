@@ -97,7 +97,7 @@ int main(int argc, char** argv) {
   top->config_addr = 0;
   top->config_data = 0;
 
-  int top_val = 13;
+  int top_val = 5;
 
   top->in_BUS16_S2_T0 = top_val;
 
