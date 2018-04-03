@@ -31,7 +31,9 @@ int main() {
         "packconnections",
         "cullzexts"});
 
+  cout << "Starting to fold constants" << endl;
   foldConstants(topMod);
+  cout << "Done folding constants" << endl;
 
   // Add outputs for all registers
   vector<Wireable*> ports;
@@ -87,7 +89,7 @@ int main() {
     Instance* inst = instR.second;
 
     if ((getQualifiedOpName(*inst) == "coreir.reg") ||
-        (getQualifiedOpName(*inst) == "coreir.regrst") ||
+        (getQualifiedOpName(*inst) == "coreir.reg_arst") ||
         (getQualifiedOpName(*inst) == "corebit.dff")) {
       uint width = inst->getModuleRef()->getGenArgs().at("width")->get<int>();
       outFile << "  outstream << \"" << inst->toString() << " " << width << "\" << \" \" << (int) top->" << inst->toString() << "_subcircuit_out << endl;\n" << endl;
