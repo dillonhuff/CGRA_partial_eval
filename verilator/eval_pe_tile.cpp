@@ -97,7 +97,10 @@ int main() {
         (getQualifiedOpName(*inst) == "coreir.reg_arst") ||
         (getQualifiedOpName(*inst) == "corebit.dff")) {
       uint width = inst->getModuleRef()->getGenArgs().at("width")->get<int>();
-      outFile << "  outstream << \"" << inst->toString() << " " << width << "\" << \" \" << (int) top->" << inst->toString() << "_subcircuit_out << endl;\n" << endl;
+      //assert(width <= 64);
+      
+      //outFile << "  outstream << \"" << inst->toString() << " " << width << "\" << \" \" << (uint64_t) top->" << inst->toString() << "_subcircuit_out << endl;\n" << endl;
+      outFile << "  outstream << \"" << inst->toString() << " " << width << "\" << \" \" << bitset<" + to_string(width) + ">(top->" << inst->toString() << "_subcircuit_out) << endl;\n" << endl;
     }
   }
 
@@ -132,8 +135,9 @@ int main() {
     if (strs.size() == 3) {
       string name = strs[0];
       int len = stoi(strs[1]);
-      long int value = stoi(strs[2]);
-      regMapAll.insert({name, BitVec(len, value)});
+      //long int value = stoi(strs[2]);
+      //regMapAll.insert({name, BitVec(len, value)});
+      regMapAll.insert({name, BitVec(len, strs[2])});
     }
   }
 
@@ -141,15 +145,15 @@ int main() {
   c->setTop(wholeTopMod);
 
   cout << "# of instances in top before setting ports to constants = " << topMod->getDef()->getInstances().size() << endl;  
-  
+
   portToConstant("tile_id", BitVec(16, 1), topMod);
   portToConstant("config_addr", BitVec(32, 0), topMod);
   portToConstant("config_data", BitVec(32, 0), topMod);
   portToConstant("reset", BitVec(1, 0), topMod);
   partiallyEvaluateCircuit(topMod, regMapAll);
-  // for (auto reg : regMapAll) {
-  //   setRegisterInit(reg.first, reg.second, topMod);
-  // }
+  for (auto reg : regMapAll) {
+    setRegisterInit(reg.first, reg.second, topMod);
+  }
 
   // Important: Make sure all connections make sense
   bool error = topMod->getDef()->validate();

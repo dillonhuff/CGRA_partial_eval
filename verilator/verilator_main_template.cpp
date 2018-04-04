@@ -6,6 +6,7 @@
 #include <string>
 #include <fstream>
 #include <streambuf>
+#include <bitset>
 
 #include "VtopMod_config.h"
 #include "verilated.h"

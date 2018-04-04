@@ -67,5 +67,10 @@ int main() {
 
   assert(tile->out_BUS16_S0_T0 == 34*2);
 
+  assert(tile->out_BUS16_S3_T1 == 34*2);
+  assert(tile->out_BUS16_S3_T2 == 34*2);
+  assert(tile->out_BUS16_S3_T3 == 34*2);
+  assert(tile->out_BUS16_S3_T4 == 34*2);
+  
   return 0;
 }
