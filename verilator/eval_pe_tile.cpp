@@ -47,6 +47,53 @@ Module* copyModule(const std::string& copyName,
 
 }
 
+void loadSpecializedState(CoreIR::Module* const topMod,
+                          const std::string& register_value_file) {
+  auto c = topMod->getContext();
+  
+  //std::ifstream rv("./config_register_values.txt");
+  std::ifstream rv(register_value_file);
+  std::string regVals((std::istreambuf_iterator<char>(rv)),
+                      std::istreambuf_iterator<char>());
+
+  unordered_map<string, BitVec> regMapAll;  
+
+  auto allStrs = splitStr(regVals, "\n");
+
+  for (uint i = 0; i < allStrs.size() - 1; i++) {
+    auto str = allStrs[i];
+    cout << str << endl;
+
+    auto strs = splitStr(str, " ");
+
+    assert((strs.size() == 3));
+
+    if (strs.size() == 3) {
+      string name = strs[0];
+      int len = stoi(strs[1]);
+      regMapAll.insert({name, BitVec(len, strs[2])});
+    }
+  }
+
+  // Module* wholeTopMod = topMod;
+  // c->setTop(wholeTopMod);
+
+  cout << "# of instances in top before setting ports to constants = " << topMod->getDef()->getInstances().size() << endl;  
+
+  portToConstant("tile_id", BitVec(16, 1), topMod);
+  portToConstant("config_addr", BitVec(32, 0), topMod);
+  portToConstant("config_data", BitVec(32, 0), topMod);
+  portToConstant("reset", BitVec(1, 0), topMod);
+  partiallyEvaluateCircuit(topMod, regMapAll);
+  for (auto reg : regMapAll) {
+    setRegisterInit(reg.first, reg.second, topMod);
+  }
+
+  // Important: Make sure all connections make sense
+  bool error = topMod->getDef()->validate();
+  assert(!error);
+}
+
 int main() {
 
   // Load pe tile verilog
@@ -69,6 +116,9 @@ int main() {
   cout << "Done folding constants" << endl;
 
   Module* topMod_conf = copyModule("topMod_config", topMod);
+
+  // TODO: Add datapath culling
+  
   
   // Write this out as verilog
   if (!saveToFile(c->getGlobal(), "topMod_config.json", topMod_conf)) {
@@ -97,9 +147,7 @@ int main() {
         (getQualifiedOpName(*inst) == "coreir.reg_arst") ||
         (getQualifiedOpName(*inst) == "corebit.dff")) {
       uint width = inst->getModuleRef()->getGenArgs().at("width")->get<int>();
-      //assert(width <= 64);
-      
-      //outFile << "  outstream << \"" << inst->toString() << " " << width << "\" << \" \" << (uint64_t) top->" << inst->toString() << "_subcircuit_out << endl;\n" << endl;
+
       outFile << "  outstream << \"" << inst->toString() << " " << width << "\" << \" \" << bitset<" + to_string(width) + ">(top->" << inst->toString() << "_subcircuit_out) << endl;\n" << endl;
     }
   }
@@ -116,48 +164,47 @@ int main() {
 
   // Read the register values back in
 
-  std::ifstream rv("./config_register_values.txt");
-  std::string regVals((std::istreambuf_iterator<char>(rv)),
-                      std::istreambuf_iterator<char>());
+  loadSpecializedState(topMod, "./config_register_values.txt");
+  // std::ifstream rv(
+  // std::string regVals((std::istreambuf_iterator<char>(rv)),
+  //                     std::istreambuf_iterator<char>());
 
-  unordered_map<string, BitVec> regMapAll;  
+  // unordered_map<string, BitVec> regMapAll;  
 
-  auto allStrs = splitStr(regVals, "\n");
+  // auto allStrs = splitStr(regVals, "\n");
 
-  for (uint i = 0; i < allStrs.size() - 1; i++) {
-    auto str = allStrs[i];
-    cout << str << endl;
+  // for (uint i = 0; i < allStrs.size() - 1; i++) {
+  //   auto str = allStrs[i];
+  //   cout << str << endl;
 
-    auto strs = splitStr(str, " ");
+  //   auto strs = splitStr(str, " ");
 
-    assert((strs.size() == 3));
+  //   assert((strs.size() == 3));
 
-    if (strs.size() == 3) {
-      string name = strs[0];
-      int len = stoi(strs[1]);
-      //long int value = stoi(strs[2]);
-      //regMapAll.insert({name, BitVec(len, value)});
-      regMapAll.insert({name, BitVec(len, strs[2])});
-    }
-  }
+  //   if (strs.size() == 3) {
+  //     string name = strs[0];
+  //     int len = stoi(strs[1]);
+  //     regMapAll.insert({name, BitVec(len, strs[2])});
+  //   }
+  // }
 
-  Module* wholeTopMod = topMod;
-  c->setTop(wholeTopMod);
+  // Module* wholeTopMod = topMod;
+  // c->setTop(wholeTopMod);
 
-  cout << "# of instances in top before setting ports to constants = " << topMod->getDef()->getInstances().size() << endl;  
+  // cout << "# of instances in top before setting ports to constants = " << topMod->getDef()->getInstances().size() << endl;  
 
-  portToConstant("tile_id", BitVec(16, 1), topMod);
-  portToConstant("config_addr", BitVec(32, 0), topMod);
-  portToConstant("config_data", BitVec(32, 0), topMod);
-  portToConstant("reset", BitVec(1, 0), topMod);
-  partiallyEvaluateCircuit(topMod, regMapAll);
-  for (auto reg : regMapAll) {
-    setRegisterInit(reg.first, reg.second, topMod);
-  }
+  // portToConstant("tile_id", BitVec(16, 1), topMod);
+  // portToConstant("config_addr", BitVec(32, 0), topMod);
+  // portToConstant("config_data", BitVec(32, 0), topMod);
+  // portToConstant("reset", BitVec(1, 0), topMod);
+  // partiallyEvaluateCircuit(topMod, regMapAll);
+  // for (auto reg : regMapAll) {
+  //   setRegisterInit(reg.first, reg.second, topMod);
+  // }
 
-  // Important: Make sure all connections make sense
-  bool error = topMod->getDef()->validate();
-  assert(!error);
+  // // Important: Make sure all connections make sense
+  // bool error = topMod->getDef()->validate();
+  // assert(!error);
 
   c->runPasses({"packconnections"});
 
@@ -175,7 +222,7 @@ int main() {
   cout << "# of instances in top after folding constants = " << topMod->getDef()->getInstances().size() << endl;
 
   // This should be a verilog testbench
-  if (!saveToFile(c->getGlobal(), "mul_2_pe.json", wholeTopMod)) {
+  if (!saveToFile(c->getGlobal(), "mul_2_pe.json", topMod)) {
     cout << "Could not save to json!!" << endl;
     c->die();
   }
