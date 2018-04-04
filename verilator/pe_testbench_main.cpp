@@ -65,7 +65,7 @@ int main() {
   
   //cout << "tile->out_BUS16_S1_T0 == " << tile->out_BUS16_S1_T0 << endl;
 
-  assert(tile->out_BUS16_S1_T0 == 4*2);
+  assert(tile->out_BUS16_S0_T0 == 34*2);
 
   return 0;
 }

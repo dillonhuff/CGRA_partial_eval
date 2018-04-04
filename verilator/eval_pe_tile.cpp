@@ -11,37 +11,15 @@
 using namespace CoreIR;
 using namespace std;
 
-int main() {
+Module* copyModule(const std::string& copyName,
+                   CoreIR::Module* const topMod) {
 
-  // Load pe tile verilog
-  Context* c = newContext();
-
-  CoreIRLoadLibrary_rtlil(c);
-
-  //Module* topMod = loadModule(c, "pe_tile_new_unq1.json", "pe_tile_new_unq1");
-  //Module* topMod = loadModule(c, "top_proc.json", "top");
-  //Module* topMod = loadModule(c, "pe_hwmaster_03_07_2018.json", "pe_tile_new_unq1");
-  Module* topMod = loadModule(c, "pe_hwmaster_03_20_2018.json", "pe_tile_new_unq1");
-  c->runPasses({"rungenerators",
-        //"add-dummy-inputs",
-        "flatten",
-        "removeconstduplicates",
-        "sanitize-names",
-        "deletedeadinstances",
-        "packconnections",
-        "cullzexts"});
-
-  cout << "Starting to fold constants" << endl;
-  foldConstants(topMod);
-  cout << "Done folding constants" << endl;
+  Context* c = topMod->getContext();
 
   // Add outputs for all registers
   vector<Wireable*> ports;
   for (auto port : topMod->getDef()->sel("self")->getSelects()) {
-    // if ((port.second->getType()->getDir() == Type::DK_Out) ||
-    //     (port.second->getType()->getDir() == Type::DK_InOut)) {
     ports.push_back(port.second);
-    //}
   }
 
   cout << "All ports" << endl;
@@ -63,8 +41,35 @@ int main() {
                       c->getGlobal());
 
   Module* topMod_conf =
-    c->getGlobal()->getModule("topMod_config");
+    c->getGlobal()->getModule(copyName);
 
+  return topMod_conf;
+
+}
+
+int main() {
+
+  // Load pe tile verilog
+  Context* c = newContext();
+
+  CoreIRLoadLibrary_rtlil(c);
+
+  Module* topMod = loadModule(c, "pe_hwmaster_03_20_2018.json", "pe_tile_new_unq1");
+  c->runPasses({"rungenerators",
+        //"add-dummy-inputs",
+        "flatten",
+        "removeconstduplicates",
+        "sanitize-names",
+        "deletedeadinstances",
+        "packconnections",
+        "cullzexts"});
+
+  cout << "Starting to fold constants" << endl;
+  foldConstants(topMod);
+  cout << "Done folding constants" << endl;
+
+  Module* topMod_conf = copyModule("topMod_config", topMod);
+  
   // Write this out as verilog
   if (!saveToFile(c->getGlobal(), "topMod_config.json", topMod_conf)) {
     cout << "Could not save to json!!" << endl;
