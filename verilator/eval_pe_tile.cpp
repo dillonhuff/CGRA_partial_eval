@@ -92,6 +92,24 @@ void loadSpecializedState(CoreIR::Module* const topMod,
   assert(!error);
 }
 
+bool allDriversFrom(CoreIR::Select* const sel,
+                    const std::set<Select*>& dataSelects) {
+  auto in0Sels = getSourceSelects(sel);
+  
+  bool allDataSourcesFromPorts = true;
+
+  for (auto sel : in0Sels) {
+    if (!any_of(dataSelects, [sel](Select* const s) {
+          return isAncestorOf(s, sel);
+        })) {
+      allDataSourcesFromPorts = false;
+      break;
+    }
+  }
+
+  return allDataSourcesFromPorts;
+}
+
 void cullInputSources(const std::vector<std::string>& ports,
                       CoreIR::Module* const mod) {
 
@@ -107,7 +125,56 @@ void cullInputSources(const std::vector<std::string>& ports,
     dataSelects.insert(cast<Select>(def->sel("self")->sel(port)));
   }
 
-  assert(false);
+  // Now: Cull instances that receive data inputs from dataSelects and their
+  // ancestors
+
+  cout << "# of instances before port culling = " << def->getInstances().size() << endl;
+
+  bool removedInstance = true;
+  while (removedInstance) {
+    removedInstance = false;
+
+    for (auto instR : def->getInstances()) {
+      auto inst = instR.second;
+
+      string op = getQualifiedOpName(*inst);
+      if ((op == "coreir.mux") ||
+          (op == "coreir.and") || (op == "corebit.and") ||
+          (op == "coreir.or") || (op == "corebit.or") ||
+          (op == "coreir.eq")) {
+        if (allDriversFrom(inst->sel("in0"), dataSelects) &&
+            allDriversFrom(inst->sel("in1"), dataSelects)) {
+          removedInstance = true;
+
+          dataSelects.insert(inst->sel("out"));
+
+          cout << "Removing " << inst->toString() << endl;
+
+          def->removeInstance(inst);
+          break;
+        }
+
+      } else if ((op == "coreir.orr") || (op == "coreir.zext")) {
+
+        if (allDriversFrom(inst->sel("in"), dataSelects)) {
+          removedInstance = true;
+
+          dataSelects.insert(inst->sel("out"));
+
+          cout << "Removing " << inst->toString() << endl;
+
+          def->removeInstance(inst);
+          break;
+        }
+        
+      } else {
+        //cout << "Unsupported type in culling: " << inst->toString() << " : " << op << endl;
+        //assert(false);
+      }
+    }
+  }
+
+  cout << "# of instances after port culling = " << def->getInstances().size() << endl;
 }
 
 int main() {
@@ -142,6 +209,7 @@ int main() {
     }
   }
   cullInputSources(dataOnlyPorts, topMod_conf);
+  c->runPasses({"add-dummy-inputs"});
 
   // Write this out as verilog
   if (!saveToFile(c->getGlobal(), "topMod_config.json", topMod_conf)) {
