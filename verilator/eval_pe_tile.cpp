@@ -48,6 +48,7 @@ Module* copyModule(const std::string& copyName,
 }
 
 void loadSpecializedState(CoreIR::Module* const topMod,
+                          std::map<string, BitVec>& portValues,
                           const std::string& register_value_file) {
   auto c = topMod->getContext();
   
@@ -75,15 +76,12 @@ void loadSpecializedState(CoreIR::Module* const topMod,
     }
   }
 
-  // Module* wholeTopMod = topMod;
-  // c->setTop(wholeTopMod);
-
   cout << "# of instances in top before setting ports to constants = " << topMod->getDef()->getInstances().size() << endl;  
 
-  portToConstant("tile_id", BitVec(16, 1), topMod);
-  portToConstant("config_addr", BitVec(32, 0), topMod);
-  portToConstant("config_data", BitVec(32, 0), topMod);
-  portToConstant("reset", BitVec(1, 0), topMod);
+  for (auto p : portValues) {
+    portToConstant(p.first, p.second, topMod);
+  }
+
   partiallyEvaluateCircuit(topMod, regMapAll);
   for (auto reg : regMapAll) {
     setRegisterInit(reg.first, reg.second, topMod);
@@ -92,6 +90,24 @@ void loadSpecializedState(CoreIR::Module* const topMod,
   // Important: Make sure all connections make sense
   bool error = topMod->getDef()->validate();
   assert(!error);
+}
+
+void cullInputSources(const std::vector<std::string>& ports,
+                      CoreIR::Module* const mod) {
+
+  assert(mod->hasDef());
+  auto def = mod->getDef();
+  
+  set<Instance*> insts;
+  set<Select*> dataSelects;
+  cout << "Culling module" << endl;
+  //mod->print();
+  
+  for (auto port : ports) {
+    dataSelects.insert(cast<Select>(def->sel("self")->sel(port)));
+  }
+
+  assert(false);
 }
 
 int main() {
@@ -103,7 +119,7 @@ int main() {
 
   Module* topMod = loadModule(c, "pe_hwmaster_03_20_2018.json", "pe_tile_new_unq1");
   c->runPasses({"rungenerators",
-        //"add-dummy-inputs",
+        "add-dummy-inputs",
         "flatten",
         "removeconstduplicates",
         "sanitize-names",
@@ -116,10 +132,17 @@ int main() {
   cout << "Done folding constants" << endl;
 
   Module* topMod_conf = copyModule("topMod_config", topMod);
-
+  
   // TODO: Add datapath culling
-  
-  
+  vector<string> dataOnlyPorts;
+  for (int s = 0; s < 4; s++) {
+    for (int t = 0; t < 5; t++) {
+      dataOnlyPorts.push_back("in_BUS16_S" + to_string(s) + "_T" + to_string(t));
+      dataOnlyPorts.push_back("in_BUS1_S" + to_string(s) + "_T" + to_string(t));
+    }
+  }
+  cullInputSources(dataOnlyPorts, topMod_conf);
+
   // Write this out as verilog
   if (!saveToFile(c->getGlobal(), "topMod_config.json", topMod_conf)) {
     cout << "Could not save to json!!" << endl;
@@ -136,7 +159,7 @@ int main() {
   std::ifstream t("./verilator_main_template.cpp");
   std::string ts((std::istreambuf_iterator<char>(t)),
                  std::istreambuf_iterator<char>());
-  
+
   ofstream outFile("verilator_main.cpp");
   outFile << ts << endl;
 
@@ -163,8 +186,16 @@ int main() {
   assert(res == 0);
 
   // Read the register values back in
-
-  loadSpecializedState(topMod, "./config_register_values.txt");
+  map<string, BitVec> fixedPorts(
+                                 {
+                                   {"tile_id", BitVec(16, 1)},
+                                     {"config_addr", BitVec(32, 0)},
+                                       {"config_data", BitVec(32, 0)},
+                                         {"reset", BitVec(1, 0)}
+                                 }
+                                 );
+  
+  loadSpecializedState(topMod, fixedPorts, "./config_register_values.txt");
 
   cout << "# of instances in top before after folding constants = " << topMod->getDef()->getInstances().size() << endl;  
 
