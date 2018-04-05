@@ -110,12 +110,117 @@ bool allDriversFrom(CoreIR::Select* const sel,
   return allDataSourcesFromPorts;
 }
 
+std::set<Wireable*> dataSources(Instance* inst) {
+  string op = getQualifiedOpName(*inst);
+
+  vector<string> binops{"coreir.and", "corebit.and", "coreir.mux", "coreir.or", "coreir.eq", "coreir.lshr", "coreir.neq", "coreir.ult", "coreir.add", "coreir.sub", "coreir.mul", "coreir.xor", "coreir.ashr"};
+  vector<string> unops{"coreir.not", "corebit.not", "coreir.orr", "coreir.zext", "coreir.reg_arst", "coreir.reg", "coreir.slice", "coreir.andr", "coreir.xorr"};
+
+  if (elem(op, binops)) {
+    set<Wireable*> srcs;
+    auto in0Sels = getSourceSelects(inst->sel("in0"));
+    for (auto s : in0Sels) {
+      srcs.insert(s->getTopParent());
+    }
+    auto in1Sels = getSourceSelects(inst->sel("in1"));
+    for (auto s : in1Sels) {
+      srcs.insert(s->getTopParent());
+    }
+
+    return srcs;
+  } else if (elem(op, unops)) {
+
+    set<Wireable*> srcs;
+    auto in0Sels = getSourceSelects(inst->sel("in"));
+    for (auto s : in0Sels) {
+      srcs.insert(s->getTopParent());
+    }
+
+    return srcs;
+  } else if ((op == "coreir.wrap") || (op == "coreir.const") || (op == "corebit.const")) {
+    return {};
+  } else {
+    cout << "Unsupported node in data source: " << op << endl;
+    assert(false);
+  }
+  return {};
+}
+
 void cullInputSources(const std::vector<std::string>& ports,
                       CoreIR::Module* const mod) {
 
   assert(mod->hasDef());
   auto def = mod->getDef();
   
+  map<Wireable*, set<Wireable*> > finalDataSources;
+  map<Wireable*, set<Wireable*> > tentativeDataSources;
+  for (auto instR : def->getInstances()) {
+    tentativeDataSources.insert({instR.second, dataSources(instR.second)});
+    finalDataSources.insert({instR.second, {}});
+  }
+
+  while (tentativeDataSources.size() > 0) {
+    auto& src = *begin(tentativeDataSources);
+
+    bool allSrcAreFinal;
+    for (auto s : src.second) {
+      // s is a final data source
+      if (!isa<Instance>(s) || dataSources(cast<Instance>(s)).size() == 0) {
+        //cout << "Erasing " << s->toString() << endl;
+
+        finalDataSources.at(src.first).insert(s);
+        src.second.erase(s);
+        break;
+
+      } else {
+
+        for (auto sSrc : dataSources(cast<Instance>(s))) {
+
+          auto parent = sSrc->getTopParent();
+
+          // Loops are not allowed
+          if (parent != src.first) {
+            tentativeDataSources.at(src.first).insert(parent);
+          }
+        }
+
+        src.second.erase(s);
+        break;
+
+      }
+    }
+
+    if (src.second.size() == 0) {
+      cout << "Finalizing " << src.first->toString() << " data sources" << endl;
+      tentativeDataSources.erase(src.first);
+    }
+  }
+
+  set<Select*> dataPorts;
+  for (auto port : ports) {
+    auto s = def->sel("self")->sel(port);
+    dataPorts.insert(s);
+  }
+
+  assert(dataPorts.size() > 0);
+
+  for (auto fd : finalDataSources) {
+    bool allFromData = true;
+    for (auto src : fd.second) {
+
+      if (!isa<Select>(src) || !elem(cast<Select>(src), dataPorts)) {
+        allFromData = false;
+        break;
+      }
+    }
+
+    if (allFromData) {
+      cout << "All inputs to " << fd.first->toString() << " are from the data path" << endl;
+    }
+  }
+
+  assert(false);
+
   set<Instance*> insts;
   set<Select*> dataSelects;
 
