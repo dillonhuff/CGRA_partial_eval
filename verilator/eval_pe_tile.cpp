@@ -118,6 +118,14 @@ void cullInputSources(const std::vector<std::string>& ports,
   
   set<Instance*> insts;
   set<Select*> dataSelects;
+
+  // All constants are dead outputs
+  for (auto instR : def->getInstances()) {
+    if ((getQualifiedOpName(*(instR.second)) == "coreir.const") ||
+        (getQualifiedOpName(*(instR.second)) == "corebit.const")) {
+      dataSelects.insert(instR.second->sel("out"));
+    }
+  }
   cout << "Culling module" << endl;
   //mod->print();
   
@@ -141,7 +149,8 @@ void cullInputSources(const std::vector<std::string>& ports,
       if ((op == "coreir.mux") ||
           (op == "coreir.and") || (op == "corebit.and") ||
           (op == "coreir.or") || (op == "corebit.or") ||
-          (op == "coreir.eq")) {
+          (op == "coreir.eq") || (op == "coreir.add") ||
+          (op == "coreir.xor") || (op == "corebit.xor")) {
         if (allDriversFrom(inst->sel("in0"), dataSelects) &&
             allDriversFrom(inst->sel("in1"), dataSelects)) {
           removedInstance = true;
@@ -154,7 +163,9 @@ void cullInputSources(const std::vector<std::string>& ports,
           break;
         }
 
-      } else if ((op == "coreir.orr") || (op == "coreir.zext")) {
+      } else if ((op == "coreir.orr") || (op == "coreir.zext") ||
+                 (op == "coreir.not") || (op == "corebit.not") ||
+                 (op == "coreir.slice")) {
 
         if (allDriversFrom(inst->sel("in"), dataSelects)) {
           removedInstance = true;
@@ -167,6 +178,18 @@ void cullInputSources(const std::vector<std::string>& ports,
           break;
         }
         
+      } else if ((op == "coreir.reg_arst")) {
+        // For now ignore whether the reset port is called
+        // if (allDriversFrom(inst->sel("in"), dataSelects)) {
+        //   removedInstance = true;
+
+        //   dataSelects.insert(inst->sel("out"));
+
+        //   //cout << "Removing " << inst->toString() << endl;
+
+        //   //def->removeInstance(inst);
+        //   break;
+        // }
       } else {
         //cout << "Unsupported type in culling: " << inst->toString() << " : " << op << endl;
         //assert(false);
@@ -175,6 +198,7 @@ void cullInputSources(const std::vector<std::string>& ports,
   }
 
   cout << "# of instances after port culling = " << def->getInstances().size() << endl;
+  //assert(false);
 }
 
 int main() {
@@ -202,6 +226,7 @@ int main() {
   
   // TODO: Add datapath culling
   vector<string> dataOnlyPorts;
+  dataOnlyPorts.push_back("reset");
   for (int s = 0; s < 4; s++) {
     for (int t = 0; t < 5; t++) {
       dataOnlyPorts.push_back("in_BUS16_S" + to_string(s) + "_T" + to_string(t));
