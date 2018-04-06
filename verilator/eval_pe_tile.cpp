@@ -155,157 +155,26 @@ void cullInputSources(const std::vector<std::string>& ports,
   // How about this:
   // 1. Set of all instances that receive at least one input from a constant
   // 2. Set of all instances that receive at least one input from datapath port?
-
-  map<Wireable*, set<Wireable*> > finalDataSources;
-  map<Wireable*, set<Wireable*> > tentativeDataSources;
-  for (auto instR : def->getInstances()) {
-    tentativeDataSources.insert({instR.second, dataSources(instR.second)});
-    finalDataSources.insert({instR.second, {}});
-  }
-
-  while (tentativeDataSources.size() > 0) {
-    auto& src = *begin(tentativeDataSources);
-
-    bool allSrcAreFinal;
-    for (auto s : src.second) {
-      // s is a final data source
-      if (!isa<Instance>(s) || dataSources(cast<Instance>(s)).size() == 0) {
-        //cout << "Erasing " << s->toString() << endl;
-
-        finalDataSources.at(src.first).insert(s);
-        src.second.erase(s);
-        break;
-
-      } else {
-
-        for (auto sSrc : dataSources(cast<Instance>(s))) {
-
-          auto parent = sSrc->getTopParent();
-
-          // Loops are not allowed
-          if (parent != src.first) {
-            tentativeDataSources.at(src.first).insert(parent);
-            cout << "Adding " << parent->toString() << " as source" << endl;
-          }
-        }
-
-        src.second.erase(s);
-        break;
-
-      }
-    }
-
-    if (src.second.size() == 0) {
-      cout << "Finalizing " << src.first->toString() << " data sources" << endl;
-      tentativeDataSources.erase(src.first);
+  map<Wireable*, set<Wireable*> > dataSources;
+  for (auto field : mod->getType()->getRecord()) {
+    Select* fieldSel = def->sel("self")->sel(field.first);
+    if (fieldSel->getType()->getDir() == Type::DirKind::DK_In) {
+      dataSources.insert({fieldSel, {}});
+    } else {
+      assert(fieldSel->getType()->getDir() == Type::DirKind::DK_Out);
+      dataSources.insert({fieldSel, {fieldSel}});
     }
   }
 
-  set<Select*> dataPorts;
-  for (auto port : ports) {
-    auto s = def->sel("self")->sel(port);
-    dataPorts.insert(s);
-  }
-
-  assert(dataPorts.size() > 0);
-
-  for (auto fd : finalDataSources) {
-    bool allFromData = true;
-    for (auto src : fd.second) {
-
-      if (!isa<Select>(src) || !elem(cast<Select>(src), dataPorts)) {
-        allFromData = false;
-        break;
-      }
-    }
-
-    if (allFromData) {
-      cout << "All inputs to " << fd.first->toString() << " are from the data path" << endl;
+  cout << "All data sources" << endl;
+  for (auto w : dataSources) {
+    cout << w.first->toString() << " has data sources" << endl;
+    for (auto src : w.second) {
+      cout << "\t" << src->toString() << endl;
     }
   }
 
   assert(false);
-
-  set<Instance*> insts;
-  set<Select*> dataSelects;
-
-  // All constants are dead outputs
-  for (auto instR : def->getInstances()) {
-    if ((getQualifiedOpName(*(instR.second)) == "coreir.const") ||
-        (getQualifiedOpName(*(instR.second)) == "corebit.const")) {
-      dataSelects.insert(instR.second->sel("out"));
-    }
-  }
-  cout << "Culling module" << endl;
-  //mod->print();
-  
-  for (auto port : ports) {
-    dataSelects.insert(cast<Select>(def->sel("self")->sel(port)));
-  }
-
-  // Now: Cull instances that receive data inputs from dataSelects and their
-  // ancestors
-
-  cout << "# of instances before port culling = " << def->getInstances().size() << endl;
-
-  bool removedInstance = true;
-  while (removedInstance) {
-    removedInstance = false;
-
-    for (auto instR : def->getInstances()) {
-      auto inst = instR.second;
-
-      string op = getQualifiedOpName(*inst);
-      if ((op == "coreir.mux") ||
-          (op == "coreir.and") || (op == "corebit.and") ||
-          (op == "coreir.or") || (op == "corebit.or") ||
-          (op == "coreir.eq") || (op == "coreir.add") ||
-          (op == "coreir.xor") || (op == "corebit.xor")) {
-        if (allDriversFrom(inst->sel("in0"), dataSelects) &&
-            allDriversFrom(inst->sel("in1"), dataSelects)) {
-          removedInstance = true;
-
-          dataSelects.insert(inst->sel("out"));
-
-          cout << "Removing " << inst->toString() << endl;
-
-          def->removeInstance(inst);
-          break;
-        }
-
-      } else if ((op == "coreir.orr") || (op == "coreir.zext") ||
-                 (op == "coreir.not") || (op == "corebit.not") ||
-                 (op == "coreir.slice")) {
-
-        if (allDriversFrom(inst->sel("in"), dataSelects)) {
-          removedInstance = true;
-
-          dataSelects.insert(inst->sel("out"));
-
-          cout << "Removing " << inst->toString() << endl;
-
-          def->removeInstance(inst);
-          break;
-        }
-        
-      } else if ((op == "coreir.reg_arst")) {
-        // For now ignore whether the reset port is called
-        // if (allDriversFrom(inst->sel("in"), dataSelects)) {
-        //   removedInstance = true;
-
-        //   dataSelects.insert(inst->sel("out"));
-
-        //   //cout << "Removing " << inst->toString() << endl;
-
-        //   //def->removeInstance(inst);
-        //   break;
-        // }
-      } else {
-        //cout << "Unsupported type in culling: " << inst->toString() << " : " << op << endl;
-        //assert(false);
-      }
-    }
-  }
 
   cout << "# of instances after port culling = " << def->getInstances().size() << endl;
   //assert(false);
