@@ -151,7 +151,11 @@ void cullInputSources(const std::vector<std::string>& ports,
 
   assert(mod->hasDef());
   auto def = mod->getDef();
-  
+
+  // How about this:
+  // 1. Set of all instances that receive at least one input from a constant
+  // 2. Set of all instances that receive at least one input from datapath port?
+
   map<Wireable*, set<Wireable*> > finalDataSources;
   map<Wireable*, set<Wireable*> > tentativeDataSources;
   for (auto instR : def->getInstances()) {
@@ -181,6 +185,7 @@ void cullInputSources(const std::vector<std::string>& ports,
           // Loops are not allowed
           if (parent != src.first) {
             tentativeDataSources.at(src.first).insert(parent);
+            cout << "Adding " << parent->toString() << " as source" << endl;
           }
         }
 
