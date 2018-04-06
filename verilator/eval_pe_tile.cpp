@@ -166,6 +166,16 @@ void cullInputSources(const std::vector<std::string>& ports,
     }
   }
 
+  for (auto instR : def->getInstances()) {
+    Instance* inst = instR.second;
+    if ((getQualifiedOpName(*inst) == "coreir.const") ||
+        (getQualifiedOpName(*inst) == "corebit.const")) {
+      dataSources.insert({inst, {inst->sel("out")}});
+    } else {
+      dataSources.insert({inst, {}});
+    }
+  }
+
   cout << "All data sources" << endl;
   for (auto w : dataSources) {
     cout << w.first->toString() << " has data sources" << endl;
