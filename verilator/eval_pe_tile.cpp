@@ -142,9 +142,7 @@ void cullInputSources(const std::vector<std::string>& ports,
     }
   }
 
-  
   // Now need to update input sets
-
   vector<string> binops{"coreir.and", "corebit.and", "coreir.mux", "coreir.or", "coreir.eq", "coreir.lshr", "coreir.neq", "coreir.ult", "coreir.add", "coreir.sub", "coreir.mul", "coreir.xor", "coreir.ashr"};
   vector<string> unops{"coreir.not", "corebit.not", "coreir.orr", "coreir.zext", "coreir.reg_arst", "coreir.reg", "coreir.slice", "coreir.andr", "coreir.xorr", "coreir.wrap"};
 
@@ -223,7 +221,7 @@ void cullInputSources(const std::vector<std::string>& ports,
     }
         
     if (changed) {
-      cout << "Sources of " << w->toString() << " changed" << endl;
+      //cout << "Sources of " << w->toString() << " changed" << endl;
 
       dataSources.erase(w);
       dataSources.insert({w, newSources});
@@ -235,115 +233,25 @@ void cullInputSources(const std::vector<std::string>& ports,
     
   }
 
-  // bool changed = true;
-  // while (changed) {
-  //   changed = false;
-
-  //   for (auto sets : dataSources) {
-  //     Wireable* w = sets.first;
-  //     auto oldSources = sets.second;
-
-  //     // Now: Re-compute sources
-  //     set<Wireable*> newSources = oldSources;
-
-  //     if (isa<Instance>(w)) {
-  //       Instance* inst = cast<Instance>(w);
-  //       auto op = getQualifiedOpName(*inst);
-
-  //       if (elem(op, binops)) {
-  //         auto srcSels0 = getSourceSelects(inst->sel("in0"));
-  //         for (auto s : srcSels0) {
-  //           auto src = extractSource(s);
-
-  //           assert(contains_key(src, dataSources));
-
-  //           for (auto srcIn : dataSources.at(src)) {
-  //             newSources.insert(srcIn);
-  //           }
-  //         }
-
-  //         auto srcSels1 = getSourceSelects(inst->sel("in1"));
-  //         for (auto s : srcSels1) {
-  //           auto src = extractSource(s);
-
-  //           assert(contains_key(src, dataSources));
-
-  //           for (auto srcIn : dataSources.at(src)) {
-  //             newSources.insert(srcIn);
-  //           }
-  //         }
-          
-  //       } else if (elem(op, unops)) {
-
-  //         auto srcSels1 = getSourceSelects(inst->sel("in"));
-  //         for (auto s : srcSels1) {
-  //           auto src = extractSource(s);
-
-  //           assert(contains_key(src, dataSources));
-
-  //           for (auto srcIn : dataSources.at(src)) {
-  //             newSources.insert(srcIn);
-  //           }
-  //         }
-          
-  //       } else {
-  //         //cout << "No update for " << op << endl;
-  //       }
-  //     } else {
-  //       // for (auto srcSel : getSourceSelects(w)) {
-  //       //   Wireable* p = srcSel->getTopParent();
-  //       // }
-  //     }
-
-  //     for (auto e : newSources) {
-  //       if (!elem(e, oldSources)) {
-  //         changed = true;
-  //         break;
-  //       }
-  //     }
-
-  //     for (auto e : oldSources) {
-  //       if (!elem(e, newSources)) {
-  //         changed = true;
-  //         break;
-  //       }
-  //     }
-        
-  //     if (changed) {
-  //       cout << "Sources of " << w->toString() << " changed" << endl;
-  //       // cout << "Old sources " << endl;
-  //       // for (auto src : oldSources) {
-  //       //   cout << "\t" << src->toString() << endl;
-  //       // }
-
-  //       // cout << "New sources " << endl;
-  //       // for (auto src : newSources) {
-  //       //   cout << "\t" << src->toString() << endl;
-  //       // }
-
-  //       dataSources.erase(w);
-  //       dataSources.insert({w, newSources});
-  //       break;
-  //     }
-      
-  //   }
-  // }
-
-
-  // cout << "All data sources" << endl;
-  // for (auto w : dataSources) {
-  //   cout << w.first->toString() << " has data sources" << endl;
-  //   for (auto src : w.second) {
-  //     cout << "\t" << src->toString() << endl;
-  //   }
-  // }
-
   cout << "Data sources from datapath" << endl;
   set<Wireable*> dataPathSelects;
   for (auto pt : ports) {
     Select* fieldSel = def->sel("self")->sel(pt);
     dataPathSelects.insert(fieldSel);
   }
+
+  cout << "PE Register Sources" << endl;
+  for (auto d : dataSources) {
+    auto w = d.first;
+    auto& src = d.second;
+
+    if (isa<Instance>(w)) {
+      Instance* inst = cast<Instance>(w);
+      
+    }
+  }
+
+  assert(false);
 
   int numDataInputs = 0;
   for (auto d : dataSources) {
@@ -365,7 +273,7 @@ void cullInputSources(const std::vector<std::string>& ports,
 
     if (allFromDataOrConst &&
         atLeastOneFromDataPath) {
-      cout << w->toString() << " is a pure datapath input" << endl;
+      //cout << w->toString() << " is a pure datapath input" << endl;
 
       if (isa<Instance>(w)) {
         def->removeInstance(cast<Instance>(w));
@@ -384,20 +292,14 @@ void cullInputSources(const std::vector<std::string>& ports,
     auto& srcs = d.second;
 
     bool allFromConfigOrConst = true;
-    bool atLeastOneFromConfigPath = false;
     for (auto src : srcs) {
       if (elem(src, dataPathSelects)) {
         allFromConfigOrConst = false;
       }
     }
 
-    if (allFromConfigOrConst &&
-        atLeastOneFromConfigPath) {
-      cout << w->toString() << " is a pure config input" << endl;
-
-      // if (isa<Instance>(w)) {
-      //   def->removeInstance(cast<Instance>(w));
-      // }
+    if (allFromConfigOrConst) {
+      //cout << w->toString() << " is a pure config input" << endl;
 
       numConfigInputs += 1;
     }
