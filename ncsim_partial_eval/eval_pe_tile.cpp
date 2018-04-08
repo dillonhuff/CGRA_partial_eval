@@ -312,46 +312,7 @@ void cullInputSources(const std::vector<std::string>& ports,
   //assert(false);
 }
 
-int main() {
-
-  // Load pe tile verilog
-  Context* c = newContext();
-
-  CoreIRLoadLibrary_rtlil(c);
-
-  Module* topMod = loadModule(c, "pe_hwmaster_03_20_2018.json", "pe_tile_new_unq1");
-  c->runPasses({"rungenerators",
-        "add-dummy-inputs",
-        "flatten",
-        "removeconstduplicates",
-        "sanitize-names",
-        "deletedeadinstances",
-        "packconnections",
-        "cullzexts"});
-
-  cout << "Starting to fold constants" << endl;
-  foldConstants(topMod);
-  cout << "Done folding constants" << endl;
-
-  Module* topMod_conf = copyModule("topMod_config", topMod);
-  
-  // TODO: Add datapath culling
-  // vector<string> dataOnlyPorts;
-  // for (int s = 0; s < 4; s++) {
-  //   for (int t = 0; t < 5; t++) {
-  //     dataOnlyPorts.push_back("in_BUS16_S" + to_string(s) + "_T" + to_string(t));
-  //     dataOnlyPorts.push_back("in_BUS1_S" + to_string(s) + "_T" + to_string(t));
-  //   }
-  // }
-  //cullInputSources(dataOnlyPorts, topMod_conf);
-  c->runPasses({"add-dummy-inputs"});
-
-  // Write this out as verilog
-  if (!saveToFile(c->getGlobal(), "topMod_config.json", topMod_conf)) {
-    cout << "Could not save to json!!" << endl;
-    c->die();
-  }
-
+void runVerilogSpecializer(CoreIR::Module* const topMod_conf) {
   // Start of verilog testbench run
   cout << "Saving to verilog" << endl;
   int verilog_convert = system("coreir -i topMod_config.json -o topMod_config.v > verilog_conversion_log.txt");
@@ -388,8 +349,40 @@ int main() {
   int res = system("make verilog");
 
   assert(res == 0);
+  
+}
 
-  // END of verilog testbench run
+int main() {
+
+  // Load pe tile verilog
+  Context* c = newContext();
+
+  CoreIRLoadLibrary_rtlil(c);
+
+  Module* topMod = loadModule(c, "pe_hwmaster_03_20_2018.json", "pe_tile_new_unq1");
+  c->runPasses({"rungenerators",
+        "add-dummy-inputs",
+        "flatten",
+        "removeconstduplicates",
+        "sanitize-names",
+        "deletedeadinstances",
+        "packconnections",
+        "cullzexts"});
+
+  cout << "Starting to fold constants" << endl;
+  foldConstants(topMod);
+  cout << "Done folding constants" << endl;
+
+  Module* topMod_conf = copyModule("topMod_config", topMod);
+  c->runPasses({"add-dummy-inputs"});
+
+  // Write this out as verilog
+  if (!saveToFile(c->getGlobal(), "topMod_config.json", topMod_conf)) {
+    cout << "Could not save to json!!" << endl;
+    c->die();
+  }
+
+  runVerilogSpecializer(topMod_conf);
 
   // Read the register values back in
   map<string, BitVec> fixedPorts(
