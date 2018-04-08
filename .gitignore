@@ -8,3 +8,4 @@ partial_evaluator
 /pe_verilog/goto-line
 */obj_dir/
 *.out
+pe_eval
