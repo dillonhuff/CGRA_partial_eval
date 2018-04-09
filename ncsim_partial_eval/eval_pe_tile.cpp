@@ -47,6 +47,17 @@ Module* copyModule(const std::string& copyName,
 
 }
 
+std::string sanitizeHighImpedance(const std::string& bits) {
+  string sanitized;
+  for (int i = 0; i < (int) bits.size(); i++) {
+    if (bits[i] == 'z') {
+      sanitized += 'x';
+    } else {
+      sanitized += bits[i];
+    }
+  }
+  return sanitized;
+}
 void loadSpecializedState(CoreIR::Module* const topMod,
                           std::map<string, BitVec>& portValues,
                           const std::string& register_value_file) {
@@ -72,7 +83,7 @@ void loadSpecializedState(CoreIR::Module* const topMod,
     if (strs.size() == 3) {
       string name = strs[0];
       int len = stoi(strs[1]);
-      regMapAll.insert({name, BitVec(len, strs[2])});
+      regMapAll.insert({name, BitVec(len, sanitizeHighImpedance(strs[2]))});
     }
   }
 
