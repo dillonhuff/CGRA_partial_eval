@@ -207,19 +207,19 @@ void specializeCircuit(const std::string& jsonFile,
   CoreIRLoadLibrary_rtlil(c);
 
   Module* topMod = loadModule(c, jsonFile, moduleToSpecialize);
-  c->runPasses({"rungenerators",
-        "flatten",
-        "split-inouts",
-        "add-dummy-inputs",        
-        "removeconstduplicates"});
-        //"sanitize-names"});
-        //"deletedeadinstances",
-        // "packconnections",
-        // "cullzexts"});
+  c->runPasses({"rungenerators"});
 
-  // cout << "Starting to fold constants" << endl;
-  // foldConstants(topMod);
-  // cout << "Done folding constants" << endl;
+  c->runPasses({
+        //"add-register-outputs"});
+
+      "flatten",
+        //"split-inouts",
+        //"add-dummy-inputs",
+        "removeconstduplicates",
+          "sanitize-names",
+          "deletedeadinstances",
+          "packconnections",
+          "cullzexts"});
 
   Module* topMod_conf = copyModule("topMod_config", topMod);
   c->runPasses({"add-dummy-inputs"});

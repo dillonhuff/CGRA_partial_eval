@@ -77,6 +77,3 @@ module test();
       end
    end
 
-   wire [15:0] tile_id;
-   assign tile_id = 16'h15;
-
