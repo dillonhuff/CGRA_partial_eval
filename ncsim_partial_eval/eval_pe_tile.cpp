@@ -208,20 +208,23 @@ void specializeCircuit(const std::string& jsonFile,
 
   Module* topMod = loadModule(c, jsonFile, moduleToSpecialize);
   c->runPasses({"rungenerators",
-        "add-dummy-inputs",
         "flatten",
-        "removeconstduplicates",
-        "sanitize-names",
-        "deletedeadinstances",
-        "packconnections",
-        "cullzexts"});
+        "split-inouts",
+        "add-dummy-inputs",        
+        "removeconstduplicates"});
+        //"sanitize-names"});
+        //"deletedeadinstances",
+        // "packconnections",
+        // "cullzexts"});
 
-  cout << "Starting to fold constants" << endl;
-  foldConstants(topMod);
-  cout << "Done folding constants" << endl;
+  // cout << "Starting to fold constants" << endl;
+  // foldConstants(topMod);
+  // cout << "Done folding constants" << endl;
 
   Module* topMod_conf = copyModule("topMod_config", topMod);
   c->runPasses({"add-dummy-inputs"});
+
+  cout << "Writing topMod_config to verilog" << endl;
 
   // Write this out as verilog
   if (!saveToFile(c->getGlobal(), "topMod_config.json", topMod_conf)) {
