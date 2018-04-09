@@ -329,8 +329,8 @@ void runVerilogSpecializer(CoreIR::Module* const topMod_conf) {
   outFile << ts << endl;
 
   map<string, int> regWires;
-   for (auto instR : topMod_conf->getDef()->getInstances()) {
-     Instance* inst = instR.second;
+  for (auto instR : topMod_conf->getDef()->getInstances()) {
+    Instance* inst = instR.second;
 
     if ((getQualifiedOpName(*inst) == "coreir.reg") ||
         (getQualifiedOpName(*inst) == "coreir.reg_arst") ||
@@ -341,38 +341,29 @@ void runVerilogSpecializer(CoreIR::Module* const topMod_conf) {
 
       regWires.insert({inst->toString(), width});
     }
-   }
+  }
 
-   outFile << "\talways @(negedge clk) begin\n";
+  outFile << "\talways @(negedge clk) begin\n";
 
-   outFile << "\t\tif (config_done) begin\n" << endl;   
-   for (auto w : regWires) {
+  outFile << "\t\tif (config_done) begin\n" << endl;   
+  for (auto w : regWires) {
 
-     outFile << "\t\t$display(\"" << w.first << " " << to_string(w.second) << " %b\", " << w.first << ");" << endl;
+    outFile << "\t\t$display(\"" << w.first << " " << to_string(w.second) << " %b\", " << w.first << ");" << endl;
 
-   }
-   outFile << "\t$finish();" << endl;
-   outFile << "\t\tend" << endl;
-   outFile << "\tend" << endl;
+  }
+  outFile << "\t$finish();" << endl;
+  outFile << "\t\tend" << endl;
+  outFile << "\tend" << endl;
   
 
-   outFile << "\ttopMod_config top(.clk_in(clk),\n"
-     "\t\t.reset(rst),\n"
-     "\t\t.config_addr(config_addr),\n"
-     "\t\t.config_data(config_data),\n";
+  outFile << "\ttopMod_config top(.clk_in(clk),\n"
+    "\t\t.reset(rst),\n"
+    "\t\t.config_addr(config_addr),\n"
+    "\t\t.config_data(config_data),\n";
 
-
-  //  for (auto instR : topMod_conf->getDef()->getInstances()) {
-  //    Instance* inst = instR.second;
-
-  //   if ((getQualifiedOpName(*inst) == "coreir.reg") ||
-  //       (getQualifiedOpName(*inst) == "coreir.reg_arst") ||
-  //       (getQualifiedOpName(*inst) == "corebit.dff")) {
-  //     uint width = inst->getModuleRef()->getGenArgs().at("width")->get<int>();
-
-  //     outFile << "  outstream << \"" << inst->toString() << " " << width << "\" << \" \" << bitset<" + to_string(width) + ">(top->" << inst->toString() << "_subcircuit_out) << endl;\n" << endl;
-  //   }
-  //  }
+  for (auto w : regWires) {
+    outFile << "\t\t." << w.first << "_subcircuit_out(" << w.first << ")," << endl;
+  }
 
   outFile << "\t\t.tile_id(tile_id)\n" << endl;
   outFile << "\t);" << endl;
