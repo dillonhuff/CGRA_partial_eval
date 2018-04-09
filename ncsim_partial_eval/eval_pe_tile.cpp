@@ -121,208 +121,6 @@ bool allDriversFrom(CoreIR::Select* const sel,
   return allDataSourcesFromPorts;
 }
 
-void cullInputSources(const std::vector<std::string>& ports,
-                      CoreIR::Module* const mod) {
-
-  assert(mod->hasDef());
-  auto def = mod->getDef();
-
-  // How about this:
-  // 1. Set of all instances that receive at least one input from a constant
-  // 2. Set of all instances that receive at least one input from datapath port?
-  map<Wireable*, set<Wireable*> > dataSources;
-  for (auto field : mod->getType()->getRecord()) {
-    Select* fieldSel = def->sel("self")->sel(field.first);
-    if (fieldSel->getType()->getDir() == Type::DirKind::DK_In) {
-      dataSources.insert({fieldSel, {}});
-    } else {
-      assert(fieldSel->getType()->getDir() == Type::DirKind::DK_Out);
-      dataSources.insert({fieldSel, {fieldSel}});
-    }
-  }
-
-  set<Wireable*> constOuts;
-  for (auto instR : def->getInstances()) {
-    Instance* inst = instR.second;
-    if ((getQualifiedOpName(*inst) == "coreir.const") ||
-        (getQualifiedOpName(*inst) == "corebit.const")) {
-      dataSources.insert({inst, {inst->sel("out")}});
-      constOuts.insert(inst->sel("out"));
-    } else {
-      dataSources.insert({inst, {}});
-    }
-  }
-
-  // Now need to update input sets
-  vector<string> binops{"coreir.and", "corebit.and", "coreir.mux", "coreir.or", "coreir.eq", "coreir.lshr", "coreir.neq", "coreir.ult", "coreir.add", "coreir.sub", "coreir.mul", "coreir.xor", "coreir.ashr"};
-  vector<string> unops{"coreir.not", "corebit.not", "coreir.orr", "coreir.zext", "coreir.reg_arst", "coreir.reg", "coreir.slice", "coreir.andr", "coreir.xorr", "coreir.wrap"};
-
-  set<Wireable*> fresh;
-  for (auto val : dataSources) {
-    fresh.insert(val.first);
-  }
-
-  while (fresh.size() > 0) {
-    Wireable* w = *begin(fresh);
-    fresh.erase(w);
-
-    auto oldSources = dataSources.at(w);
-
-    // Now: Re-compute sources
-    set<Wireable*> newSources = oldSources;
-
-    if (isa<Instance>(w)) {
-      Instance* inst = cast<Instance>(w);
-      auto op = getQualifiedOpName(*inst);
-
-      if (elem(op, binops)) {
-        auto srcSels0 = getSourceSelects(inst->sel("in0"));
-        for (auto s : srcSels0) {
-          auto src = extractSource(s);
-
-          assert(contains_key(src, dataSources));
-
-          for (auto srcIn : dataSources.at(src)) {
-            newSources.insert(srcIn);
-          }
-        }
-
-        auto srcSels1 = getSourceSelects(inst->sel("in1"));
-        for (auto s : srcSels1) {
-          auto src = extractSource(s);
-
-          assert(contains_key(src, dataSources));
-
-          for (auto srcIn : dataSources.at(src)) {
-            newSources.insert(srcIn);
-          }
-        }
-          
-      } else if (elem(op, unops)) {
-
-        auto srcSels1 = getSourceSelects(inst->sel("in"));
-        for (auto s : srcSels1) {
-          auto src = extractSource(s);
-
-          assert(contains_key(src, dataSources));
-
-          for (auto srcIn : dataSources.at(src)) {
-            newSources.insert(srcIn);
-          }
-        }
-          
-      } else {
-      }
-    } else {
-    }
-
-    bool changed = false;
-    for (auto e : newSources) {
-      if (!elem(e, oldSources)) {
-        changed = true;
-        break;
-      }
-    }
-
-    for (auto e : oldSources) {
-      if (!elem(e, newSources)) {
-        changed = true;
-        break;
-      }
-    }
-        
-    if (changed) {
-      //cout << "Sources of " << w->toString() << " changed" << endl;
-
-      dataSources.erase(w);
-      dataSources.insert({w, newSources});
-      fresh.insert(w);
-      for (auto r : getReceiverSelects(w)) {
-        fresh.insert(extractSource(r));
-      }
-    }
-    
-  }
-
-  cout << "Data sources from datapath" << endl;
-  set<Wireable*> dataPathSelects;
-  for (auto pt : ports) {
-    Select* fieldSel = def->sel("self")->sel(pt);
-    dataPathSelects.insert(fieldSel);
-  }
-
-  cout << "PE Register Sources" << endl;
-  for (auto d : dataSources) {
-    auto w = d.first;
-    auto& src = d.second;
-
-    if (isa<Instance>(w)) {
-      Instance* inst = cast<Instance>(w);
-      
-    }
-  }
-
-  assert(false);
-
-  int numDataInputs = 0;
-  for (auto d : dataSources) {
-    auto w = d.first;
-    auto& srcs = d.second;
-
-    bool allFromDataOrConst = true;
-    bool atLeastOneFromDataPath = false;
-    for (auto src : srcs) {
-      if (elem(src, dataPathSelects)) {
-        atLeastOneFromDataPath = true;
-      }
-
-      if (!elem(src, dataPathSelects) &&
-          !elem(src, constOuts)) {
-        allFromDataOrConst = false;
-      }
-    }
-
-    if (allFromDataOrConst &&
-        atLeastOneFromDataPath) {
-      //cout << w->toString() << " is a pure datapath input" << endl;
-
-      if (isa<Instance>(w)) {
-        def->removeInstance(cast<Instance>(w));
-      }
-
-      numDataInputs += 1;
-    }
-  }
-
-  cout << "# of instances            = " << dataSources.size() << endl;
-  cout << "# of pure datapath inputs = " << numDataInputs << endl;
-
-  int numConfigInputs = 0;
-  for (auto d : dataSources) {
-    auto w = d.first;
-    auto& srcs = d.second;
-
-    bool allFromConfigOrConst = true;
-    for (auto src : srcs) {
-      if (elem(src, dataPathSelects)) {
-        allFromConfigOrConst = false;
-      }
-    }
-
-    if (allFromConfigOrConst) {
-      //cout << w->toString() << " is a pure config input" << endl;
-
-      numConfigInputs += 1;
-    }
-  }
-
-  cout << "# of instances            = " << dataSources.size() << endl;
-  cout << "# of pure config inputs   = " << numConfigInputs << endl;
-  
-  cout << "# of instances after port culling = " << def->getInstances().size() << endl;
-  //assert(false);
-}
-
 void runVerilogSpecializer(CoreIR::Module* const topMod_conf) {
   // Start of verilog testbench run
   cout << "Saving to verilog" << endl;
@@ -365,7 +163,6 @@ void runVerilogSpecializer(CoreIR::Module* const topMod_conf) {
   outFile << "\t$finish();" << endl;
   outFile << "\t\tend" << endl;
   outFile << "\tend" << endl;
-  
 
   outFile << "\ttopMod_config top(.clk_in(clk),\n"
     "\t\t.reset(rst),\n"
@@ -394,14 +191,15 @@ void runVerilogSpecializer(CoreIR::Module* const topMod_conf) {
   assert(res == 0);
 }
 
-int main() {
-
+void specializeCircuit(const std::string& jsonFile,
+                       const std::string& moduleToSpecialize,
+                       const std::string& jsonOutput) {
   // Load pe tile verilog
   Context* c = newContext();
 
   CoreIRLoadLibrary_rtlil(c);
 
-  Module* topMod = loadModule(c, "pe_hwmaster_03_20_2018.json", "pe_tile_new_unq1");
+  Module* topMod = loadModule(c, jsonFile, moduleToSpecialize);
   c->runPasses({"rungenerators",
         "add-dummy-inputs",
         "flatten",
@@ -445,12 +243,15 @@ int main() {
 
   cout << "# of instances in top after folding constants = " << topMod->getDef()->getInstances().size() << endl;
 
-  // This should be a verilog testbench
-  if (!saveToFile(c->getGlobal(), "mul_2_pe.json", topMod)) {
+  if (!saveToFile(c->getGlobal(), jsonOutput, topMod)) {
     cout << "Could not save to json!!" << endl;
     c->die();
   }
+}
 
+void runSpecializedPETests() {
+
+  // This should be converted to a system verilog testbench
   int make_verilog_res = system("coreir -i mul_2_pe.json -o mul_2_pe.v");
 
   assert(make_verilog_res == 0);
@@ -458,5 +259,10 @@ int main() {
   int verilator_res = system("make verilog_res");
 
   assert(verilator_res == 0);
+}
 
+int main() {
+  specializeCircuit("pe_hwmaster_03_20_2018.json", "pe_tile_new_unq1", "mul_2_pe.json");
+
+  runSpecializedPETests();
 }
