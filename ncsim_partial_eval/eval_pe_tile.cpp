@@ -321,32 +321,59 @@ void runVerilogSpecializer(CoreIR::Module* const topMod_conf) {
 
   // Write out the verilog main
   cout << "Writing out to verilator" << endl;
-  std::ifstream t("./verilator_main_template.cpp");
+  std::ifstream t("./verilog_test_stub.v");
   std::string ts((std::istreambuf_iterator<char>(t)),
                  std::istreambuf_iterator<char>());
 
-  ofstream outFile("verilator_main.cpp");
+  ofstream outFile("specialize_test.v");
   outFile << ts << endl;
 
-  for (auto instR : topMod_conf->getDef()->getInstances()) {
-    Instance* inst = instR.second;
+  vector<string> regWires;
+   for (auto instR : topMod_conf->getDef()->getInstances()) {
+     Instance* inst = instR.second;
 
     if ((getQualifiedOpName(*inst) == "coreir.reg") ||
         (getQualifiedOpName(*inst) == "coreir.reg_arst") ||
         (getQualifiedOpName(*inst) == "corebit.dff")) {
       uint width = inst->getModuleRef()->getGenArgs().at("width")->get<int>();
 
-      outFile << "  outstream << \"" << inst->toString() << " " << width << "\" << \" \" << bitset<" + to_string(width) + ">(top->" << inst->toString() << "_subcircuit_out) << endl;\n" << endl;
+      outFile << "\t wire [" << to_string(width - 1) << " : 0] " << inst->toString() << ";\n" << endl;
     }
-  }
+   }
+  
 
-  outFile << "  outstream.close();\n" << endl;
+  outFile << "\ttopMod_config top(.clk_in(clk),\n"
+    "\t\t.reset(rst),\n"
+    "\t\t.config_addr(config_addr),\n"
+    "\t\t.config_data(config_data),\n";
 
-  outFile << "\n}\n" << endl;
+
+  //  for (auto instR : topMod_conf->getDef()->getInstances()) {
+  //    Instance* inst = instR.second;
+
+  //   if ((getQualifiedOpName(*inst) == "coreir.reg") ||
+  //       (getQualifiedOpName(*inst) == "coreir.reg_arst") ||
+  //       (getQualifiedOpName(*inst) == "corebit.dff")) {
+  //     uint width = inst->getModuleRef()->getGenArgs().at("width")->get<int>();
+
+  //     outFile << "  outstream << \"" << inst->toString() << " " << width << "\" << \" \" << bitset<" + to_string(width) + ">(top->" << inst->toString() << "_subcircuit_out) << endl;\n" << endl;
+  //   }
+  //  }
+
+  outFile << "\t\t.tile_id(tile_id)\n" << endl;
+  outFile << "\t);" << endl;
+
+  outFile << "endmodule" << endl;
 
   outFile.close();
 
-  int res = system("make verilog");
+  cout << "Running iverilog" << endl;
+
+  int res = system("iverilog -o test_conf specialize_test.v topMod_config.v");
+
+  assert(res == 0);
+
+  res = system("vvp test_conf > config_register_values.txt;");
 
   assert(res == 0);
   
