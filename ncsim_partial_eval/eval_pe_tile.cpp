@@ -122,6 +122,7 @@ bool allDriversFrom(CoreIR::Select* const sel,
 }
 
 void runVerilogSpecializer(CoreIR::Module* const topMod_conf,
+                           const std::vector<std::string>& portsToConnect,
                            const std::string& testStub) {
   // Start of verilog testbench run
   cout << "Saving to verilog" << endl;
@@ -165,7 +166,6 @@ void runVerilogSpecializer(CoreIR::Module* const topMod_conf,
   outFile << "\t\tend" << endl;
   outFile << "\tend" << endl;
 
-  vector<string> portsToConnect{"clk_in", "reset", "config_addr", "config_data"};
   
   outFile << "\ttopMod_config top(\n";
 
@@ -202,6 +202,7 @@ void runVerilogSpecializer(CoreIR::Module* const topMod_conf,
 void specializeCircuit(const std::string& jsonFile,
                        const std::string& testStubFile,
                        map<string, BitVec>& fixedPorts,
+                       const vector<std::string>& portsToConnect,
                        const std::string& moduleToSpecialize,
                        const std::string& jsonOutput) {
   // Load pe tile verilog
@@ -232,7 +233,7 @@ void specializeCircuit(const std::string& jsonFile,
     c->die();
   }
 
-  runVerilogSpecializer(topMod_conf, testStubFile);
+  runVerilogSpecializer(topMod_conf, portsToConnect, testStubFile);
 
   // Read the register values back in
   loadSpecializedState(topMod, fixedPorts, "./config_register_values.txt");
@@ -264,6 +265,8 @@ void runSpecializedPETests() {
 
 int main() {
 
+  vector<string> portsToConnect{"clk_in", "reset", "config_addr", "config_data"};
+
   map<string, BitVec> fixedPorts(
                                  {
                                    {"tile_id", BitVec(16, 1)},
@@ -277,6 +280,7 @@ int main() {
   specializeCircuit("pe_hwmaster_03_20_2018.json",
                     "verilog_test_stub.v",
                     fixedPorts,
+                    portsToConnect,
                     "pe_tile_new_unq1",
                     "mul_2_pe.json");
 
