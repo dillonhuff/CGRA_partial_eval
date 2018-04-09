@@ -153,7 +153,7 @@ void runVerilogSpecializer(CoreIR::Module* const topMod_conf,
     }
   }
 
-  outFile << "\talways @(negedge clk) begin\n";
+  outFile << "\talways @(negedge clk_in) begin\n";
 
   outFile << "\t\tif (config_done) begin\n" << endl;   
   for (auto w : regWires) {
@@ -165,10 +165,17 @@ void runVerilogSpecializer(CoreIR::Module* const topMod_conf,
   outFile << "\t\tend" << endl;
   outFile << "\tend" << endl;
 
-  outFile << "\ttopMod_config top(.clk_in(clk),\n"
-    "\t\t.reset(rst),\n"
-    "\t\t.config_addr(config_addr),\n"
-    "\t\t.config_data(config_data),\n";
+  vector<string> portsToConnect{"clk_in", "reset", "config_addr", "config_data"};
+  
+  outFile << "\ttopMod_config top(\n";
+
+  for (auto port : portsToConnect) {
+    outFile << "\t\t." << port << "(" << port << "),\n";
+    // ".clk_in(clk),\n"
+    // "\t\t.reset(rst),\n"
+    // "\t\t.config_addr(config_addr),\n"
+    // "\t\t.config_data(config_data),\n";
+  }
 
   for (auto w : regWires) {
     outFile << "\t\t." << w.first << "_subcircuit_out(" << w.first << ")," << endl;
