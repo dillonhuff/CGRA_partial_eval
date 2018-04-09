@@ -9,3 +9,4 @@ partial_evaluator
 */obj_dir/
 *.out
 pe_eval
+test
