@@ -261,6 +261,26 @@ void runSpecializedPETests() {
 
 int main() {
 
+  // Specialize the whole cgra
+  vector<string> cgraPorts{"clk_in", "reset_in", "config_addr_in", "config_data_in"};
+
+  map<string, BitVec> cgraFixedPorts(
+                                 {
+                                     {"config_addr_in", BitVec(32, 0)},
+                                       {"config_data_in", BitVec(32, 0)},
+                                         {"reset_in", BitVec(1, 0)}
+                                 }
+                                 );
+  
+  
+  specializeCircuit("/Users/dillon/CoreIRWorkspace/CGRA_coreir/top.json",
+                    "verilog_test_stub.v",
+                    cgraFixedPorts,
+                    cgraPorts,
+                    "top",
+                    "mul_2_cgra.json");
+  
+  // Specialize the PE tile
   vector<string> portsToConnect{"clk_in", "reset", "config_addr", "config_data"};
 
   map<string, BitVec> fixedPorts(
