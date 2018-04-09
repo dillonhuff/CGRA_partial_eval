@@ -18,12 +18,16 @@ module test();
 
    integer    config_file;
    integer    scan_file;
+   integer    f;
+   
 
    reg 	      config_done;
    
    initial begin
 
       config_file = $fopen("./pw2_16x16_only_config_lines.bsa", "r");
+      f = $fopen("config_register_values.txt", "w");
+
       reset_done = 0;
 
       if (config_file == 0) begin

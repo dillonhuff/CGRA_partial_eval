@@ -159,9 +159,10 @@ void runVerilogSpecializer(CoreIR::Module* const topMod_conf,
   outFile << "\t\tif (config_done) begin\n" << endl;   
   for (auto w : regWires) {
 
-    outFile << "\t\t$display(\"" << w.first << " " << to_string(w.second) << " %b\", " << w.first << ");" << endl;
+    outFile << "\t\t$fwrite(f, \"" << w.first << " " << to_string(w.second) << " %b\\n\", " << w.first << ");" << endl;
 
   }
+  outFile << "\t$fclose(f);" << endl;
   outFile << "\t$finish();" << endl;
   outFile << "\t\tend" << endl;
   outFile << "\tend" << endl;
@@ -186,13 +187,16 @@ void runVerilogSpecializer(CoreIR::Module* const topMod_conf,
 
   cout << "Running iverilog" << endl;
 
-  int res = system("iverilog -o test_conf specialize_test.v topMod_config.v");
+  int res = system("python run.py"); // > config_register_values.txt");
+  // Replace with nc-sim
 
-  assert(res == 0);
+  //  int res = system("iverilog -o test_conf specialize_test.v topMod_config.v");
 
-  res = system("vvp test_conf > config_register_values.txt;");
+  //  assert(res == 0);
 
-  assert(res == 0);
+  //  res = system("vvp test_conf > config_register_values.txt;");
+
+  //  assert(res == 0);
 }
 
 void specializeCircuit(const std::string& jsonFile,
@@ -211,8 +215,8 @@ void specializeCircuit(const std::string& jsonFile,
         "flatten",
         "split-inouts",
         "add-dummy-inputs",        
-        "removeconstduplicates"});
-        //"sanitize-names"});
+        "removeconstduplicates",
+        "sanitize-names"});
         //"deletedeadinstances",
         // "packconnections",
         // "cullzexts"});
