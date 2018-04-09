@@ -328,7 +328,7 @@ void runVerilogSpecializer(CoreIR::Module* const topMod_conf) {
   ofstream outFile("specialize_test.v");
   outFile << ts << endl;
 
-  vector<string> regWires;
+  map<string, int> regWires;
    for (auto instR : topMod_conf->getDef()->getInstances()) {
      Instance* inst = instR.second;
 
@@ -338,14 +338,28 @@ void runVerilogSpecializer(CoreIR::Module* const topMod_conf) {
       uint width = inst->getModuleRef()->getGenArgs().at("width")->get<int>();
 
       outFile << "\t wire [" << to_string(width - 1) << " : 0] " << inst->toString() << ";\n" << endl;
+
+      regWires.insert({inst->toString(), width});
     }
    }
+
+   outFile << "\talways @(negedge clk) begin\n";
+
+   outFile << "\t\tif (config_done) begin\n" << endl;   
+   for (auto w : regWires) {
+
+     outFile << "\t\t$display(\"" << w.first << " " << to_string(w.second) << " %b\", " << w.first << ");" << endl;
+
+   }
+   outFile << "\t$finish();" << endl;
+   outFile << "\t\tend" << endl;
+   outFile << "\tend" << endl;
   
 
-  outFile << "\ttopMod_config top(.clk_in(clk),\n"
-    "\t\t.reset(rst),\n"
-    "\t\t.config_addr(config_addr),\n"
-    "\t\t.config_data(config_data),\n";
+   outFile << "\ttopMod_config top(.clk_in(clk),\n"
+     "\t\t.reset(rst),\n"
+     "\t\t.config_addr(config_addr),\n"
+     "\t\t.config_data(config_data),\n";
 
 
   //  for (auto instR : topMod_conf->getDef()->getInstances()) {
