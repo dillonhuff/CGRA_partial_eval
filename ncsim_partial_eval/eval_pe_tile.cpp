@@ -282,7 +282,7 @@ int main() {
   //                    cgraPorts,
   //                    "top",
   //                    "mul_2_cgra.json");
-  
+
   // Specialize the PE tile
   vector<string> portsToConnect{"clk_in", "reset", "config_addr", "config_data"};
 
