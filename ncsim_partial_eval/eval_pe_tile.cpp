@@ -192,6 +192,7 @@ void runVerilogSpecializer(CoreIR::Module* const topMod_conf) {
 }
 
 void specializeCircuit(const std::string& jsonFile,
+                       map<string, BitVec>& fixedPorts,
                        const std::string& moduleToSpecialize,
                        const std::string& jsonOutput) {
   // Load pe tile verilog
@@ -225,15 +226,6 @@ void specializeCircuit(const std::string& jsonFile,
   runVerilogSpecializer(topMod_conf);
 
   // Read the register values back in
-  map<string, BitVec> fixedPorts(
-                                 {
-                                   {"tile_id", BitVec(16, 1)},
-                                     {"config_addr", BitVec(32, 0)},
-                                       {"config_data", BitVec(32, 0)},
-                                         {"reset", BitVec(1, 0)}
-                                 }
-                                 );
-  
   loadSpecializedState(topMod, fixedPorts, "./config_register_values.txt");
 
   cout << "# of instances in top before after folding constants = " << topMod->getDef()->getInstances().size() << endl;  
@@ -262,7 +254,21 @@ void runSpecializedPETests() {
 }
 
 int main() {
-  specializeCircuit("pe_hwmaster_03_20_2018.json", "pe_tile_new_unq1", "mul_2_pe.json");
+
+  map<string, BitVec> fixedPorts(
+                                 {
+                                   {"tile_id", BitVec(16, 1)},
+                                     {"config_addr", BitVec(32, 0)},
+                                       {"config_data", BitVec(32, 0)},
+                                         {"reset", BitVec(1, 0)}
+                                 }
+                                 );
+  
+  
+  specializeCircuit("pe_hwmaster_03_20_2018.json",
+                    fixedPorts,
+                    "pe_tile_new_unq1",
+                    "mul_2_pe.json");
 
   runSpecializedPETests();
 }
