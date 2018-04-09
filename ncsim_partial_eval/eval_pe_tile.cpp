@@ -171,10 +171,6 @@ void runVerilogSpecializer(CoreIR::Module* const topMod_conf,
 
   for (auto port : portsToConnect) {
     outFile << "\t\t." << port << "(" << port << "),\n";
-    // ".clk_in(clk),\n"
-    // "\t\t.reset(rst),\n"
-    // "\t\t.config_addr(config_addr),\n"
-    // "\t\t.config_data(config_data),\n";
   }
 
   for (auto w : regWires) {
