@@ -121,7 +121,8 @@ bool allDriversFrom(CoreIR::Select* const sel,
   return allDataSourcesFromPorts;
 }
 
-void runVerilogSpecializer(CoreIR::Module* const topMod_conf) {
+void runVerilogSpecializer(CoreIR::Module* const topMod_conf,
+                           const std::string& testStub) {
   // Start of verilog testbench run
   cout << "Saving to verilog" << endl;
   int verilog_convert = system("coreir -i topMod_config.json -o topMod_config.v > verilog_conversion_log.txt");
@@ -130,7 +131,7 @@ void runVerilogSpecializer(CoreIR::Module* const topMod_conf) {
 
   // Write out the verilog main
   cout << "Writing out to verilator" << endl;
-  std::ifstream t("./verilog_test_stub.v");
+  std::ifstream t(testStub);
   std::string ts((std::istreambuf_iterator<char>(t)),
                  std::istreambuf_iterator<char>());
 
@@ -192,6 +193,7 @@ void runVerilogSpecializer(CoreIR::Module* const topMod_conf) {
 }
 
 void specializeCircuit(const std::string& jsonFile,
+                       const std::string& testStubFile,
                        map<string, BitVec>& fixedPorts,
                        const std::string& moduleToSpecialize,
                        const std::string& jsonOutput) {
@@ -223,7 +225,7 @@ void specializeCircuit(const std::string& jsonFile,
     c->die();
   }
 
-  runVerilogSpecializer(topMod_conf);
+  runVerilogSpecializer(topMod_conf, testStubFile);
 
   // Read the register values back in
   loadSpecializedState(topMod, fixedPorts, "./config_register_values.txt");
@@ -266,6 +268,7 @@ int main() {
   
   
   specializeCircuit("pe_hwmaster_03_20_2018.json",
+                    "verilog_test_stub.v",
                     fixedPorts,
                     "pe_tile_new_unq1",
                     "mul_2_pe.json");
