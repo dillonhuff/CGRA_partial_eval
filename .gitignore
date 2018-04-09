@@ -10,3 +10,4 @@ partial_evaluator
 *.out
 pe_eval
 test
+test_conf

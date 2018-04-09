@@ -392,7 +392,6 @@ void runVerilogSpecializer(CoreIR::Module* const topMod_conf) {
   res = system("vvp test_conf > config_register_values.txt;");
 
   assert(res == 0);
-  
 }
 
 int main() {
