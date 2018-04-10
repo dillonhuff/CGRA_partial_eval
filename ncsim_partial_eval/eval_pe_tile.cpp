@@ -174,11 +174,18 @@ void runVerilogSpecializer(CoreIR::Module* const topMod_conf,
     outFile << "\t\t." << port << "(" << port << "),\n";
   }
 
+  int i = 0;
   for (auto w : regWires) {
-    outFile << "\t\t." << w.first << "_subcircuit_out(" << w.first << ")," << endl;
+    outFile << "\t\t." << w.first << "_subcircuit_out(" << w.first << ")";
+    if (i < (regWires.size() - 1)) {
+      outFile << ",";
+    }
+    outFile << endl;
+
+    i++;
   }
 
-  outFile << "\t\t.tile_id(tile_id)\n" << endl;
+  //outFile << "\t\t.tile_id(tile_id)\n" << endl;
   outFile << "\t);" << endl;
 
   outFile << "endmodule" << endl;
@@ -211,23 +218,75 @@ void specializeCircuit(const std::string& jsonFile,
   CoreIRLoadLibrary_rtlil(c);
 
   Module* topMod = loadModule(c, jsonFile, moduleToSpecialize);
-  c->runPasses({"rungenerators",
-        "flatten",
-  //"split-inouts",
-        "add-dummy-inputs"});
-        //"removeconstduplicates"});
-        //"sanitize-names"});
-        //"deletedeadinstances",
-        // "packconnections",
-        // "cullzexts"});
+  c->runPasses({"rungenerators"});
 
-  // cout << "Starting to fold constants" << endl;
-  // foldConstants(topMod);
-  // cout << "Done folding constants" << endl;
+  // NOTE: This is a hack. Please remove later when coreir optimizations are
+  // better
+  if (topMod->getName() == "top") {
+    // To be slightly less hacky this should be built by scanning the bitstream
+    vector<int> usedTiles{0x26, 0x34, 0x46, 0x54, 0x66, 0x74, 0x86, 0x94, 0xA6, 0xB4, 0xC6, 0xD4, 0xE6, 0xF4, 0x106, 0x114, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24};
+
+    bool removedTile = true;
+    while (removedTile) {
+      removedTile = false;
+      
+      for (auto instR : topMod->getDef()->getInstances()) {
+        Instance* inst = instR.second;
+        for (auto field : inst->getModuleRef()->getType()->getFields()) {
+
+          // Dont remove IO tiles yet!
+          if (((inst->getModuleRef()->getName() == "pe_tile_new_unq1") ||
+               (inst->getModuleRef()->getName() == "memory_tile_unq1"))
+              && (field == "tile_id")) {
+            //cout << inst->toString() << " has tile id field" << endl;
+            Select* s = inst->sel(field);
+
+            vector<Select*> values = getSignalValues(s);
+            maybe<BitVec> tileId = getSignalBitVec(values);
+
+            if (tileId.has_value()) {
+              //cout << "Tile id == " << tileId.get_value() << endl;
+              int val = tileId.get_value().to_type<int>();
+
+              if (!elem(val, usedTiles)) {
+                removedTile = true;
+                cout << "Removed tile " << inst->toString() << endl;
+                topMod->getDef()->removeInstance(inst);
+                break;
+              }
+            } else {
+              cout << inst->toString() << " has no tile id!" << endl;
+              //assert(false);
+            }
+          }
+        }
+
+        if (removedTile) {
+          break;
+        }
+
+      }
+    }
+  }
+
+  cout << "Done removing tiles" << endl;
+
+  c->runPasses({
+        //"add-register-outputs"});
+
+      "flatten",
+        //"split-inouts",
+        "add-dummy-inputs",
+        "removeconstduplicates",
+          "sanitize-names",
+          "deletedeadinstances",
+          "packconnections",
+          "cullzexts"});
 
   Module* topMod_conf = copyModule("topMod_config", topMod);
   c->runPasses({"add-dummy-inputs"});
 
+  cout << "# of instances in flattened circuit = " << topMod_conf->getDef()->getInstances().size() << endl;
   cout << "Writing topMod_config to verilog" << endl;
 
   // Write this out as verilog
@@ -241,7 +300,7 @@ void specializeCircuit(const std::string& jsonFile,
   // Read the register values back in
   loadSpecializedState(topMod, fixedPorts, "./config_register_values.txt");
 
-  cout << "# of instances in top before after folding constants = " << topMod->getDef()->getInstances().size() << endl;  
+  cout << "# of instances in top before folding constants = " << topMod->getDef()->getInstances().size() << endl;  
 
   c->runPasses({"fold-constants", "packconnections"});
   c->runPasses({"deletedeadinstances"});
@@ -268,6 +327,7 @@ void runSpecializedPETests() {
 
 int main() {
 
+<<<<<<< HEAD
   // Specialize the whole cgra
     vector<string> cgraPorts{"clk_in", "reset_in", "config_addr_in", "config_data_in"};
 
@@ -279,6 +339,26 @@ int main() {
                                    }
                                    );
   
+=======
+  // // Specialize the whole cgra
+  vector<string> cgraPorts{"clk_in", "reset_in", "config_addr_in", "config_data_in"};
+
+  map<string, BitVec> cgraFixedPorts(
+                                 {
+                                     {"config_addr_in", BitVec(32, 0)},
+                                       {"config_data_in", BitVec(32, 0)},
+                                         {"reset_in", BitVec(1, 0)}
+                                 }
+                                 );
+  
+  
+  specializeCircuit("/Users/dillon/CoreIRWorkspace/CGRA_coreir/top.json",
+                    "cgra_test_stub.v",
+                    cgraFixedPorts,
+                    cgraPorts,
+                    "top",
+                    "mul_2_cgra.json");
+>>>>>>> origin/master
   
     specializeCircuit("../../CGRA_coreir/top.json",
                       "cgra_verilog_test_stub.v",
