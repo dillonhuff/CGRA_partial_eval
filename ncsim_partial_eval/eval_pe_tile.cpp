@@ -209,12 +209,56 @@ void specializeCircuit(const std::string& jsonFile,
   Module* topMod = loadModule(c, jsonFile, moduleToSpecialize);
   c->runPasses({"rungenerators"});
 
+  // NOTE: This is a hack. Please remove later when coreir optimizations are
+  // better
+  if (topMod->getName() == "top") {
+    vector<int> usedTiles{0x26, 0x34, 0x46, 0x54, 0x66, 0x74, 0x86, 0x94, 0xA6, 0xB4, 0xC6, 0xD4, 0xE6, 0xF4, 0x106, 0x114, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24};
+
+    bool removedTile = true;
+    while (removedTile) {
+      removedTile = false;
+      
+      for (auto instR : topMod->getDef()->getInstances()) {
+        Instance* inst = instR.second;
+        for (auto field : inst->getModuleRef()->getType()->getFields()) {
+          if (field == "tile_id") {
+            cout << inst->toString() << " has tile id field" << endl;
+            Select* s = inst->sel(field);
+
+            vector<Select*> values = getSignalValues(s);
+            maybe<BitVec> tileId = getSignalBitVec(values);
+
+            if (tileId.has_value()) {
+              cout << "Tile id == " << tileId.get_value() << endl;
+              int val = tileId.get_value().to_type<int>();
+
+              if (!elem(val, usedTiles)) {
+                removedTile = true;
+                cout << "Removed tile " << inst->toString() << endl;
+                topMod->getDef()->removeInstance(inst);
+                break;
+              }
+            } else {
+              cout << inst->toString() << " has no tile id!" << endl;
+              //assert(false);
+            }
+          }
+        }
+
+        if (removedTile) {
+          break;
+        }
+
+      }
+    }
+  }
+
   c->runPasses({
         //"add-register-outputs"});
 
       "flatten",
         //"split-inouts",
-        //"add-dummy-inputs",
+        "add-dummy-inputs",
         "removeconstduplicates",
           "sanitize-names",
           "deletedeadinstances",
@@ -265,23 +309,23 @@ void runSpecializedPETests() {
 int main() {
 
   // // Specialize the whole cgra
-  // vector<string> cgraPorts{"clk_in", "reset_in", "config_addr_in", "config_data_in"};
+  vector<string> cgraPorts{"clk_in", "reset_in", "config_addr_in", "config_data_in"};
 
-  // map<string, BitVec> cgraFixedPorts(
-  //                                {
-  //                                    {"config_addr_in", BitVec(32, 0)},
-  //                                      {"config_data_in", BitVec(32, 0)},
-  //                                        {"reset_in", BitVec(1, 0)}
-  //                                }
-  //                                );
+  map<string, BitVec> cgraFixedPorts(
+                                 {
+                                     {"config_addr_in", BitVec(32, 0)},
+                                       {"config_data_in", BitVec(32, 0)},
+                                         {"reset_in", BitVec(1, 0)}
+                                 }
+                                 );
   
   
-  // specializeCircuit("/Users/dillon/CoreIRWorkspace/CGRA_coreir/top.json",
-  //                   "verilog_test_stub.v",
-  //                   cgraFixedPorts,
-  //                   cgraPorts,
-  //                   "top",
-  //                   "mul_2_cgra.json");
+  specializeCircuit("/Users/dillon/CoreIRWorkspace/CGRA_coreir/top.json",
+                    "cgra_test_stub.v",
+                    cgraFixedPorts,
+                    cgraPorts,
+                    "top",
+                    "mul_2_cgra.json");
   
   // Specialize the PE tile
   vector<string> portsToConnect{"clk_in", "reset", "config_addr", "config_data"};
