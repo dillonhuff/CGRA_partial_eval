@@ -212,6 +212,7 @@ void specializeCircuit(const std::string& jsonFile,
   // NOTE: This is a hack. Please remove later when coreir optimizations are
   // better
   if (topMod->getName() == "top") {
+    // To be slightly less hacky this should be built by scanning the bitstream
     vector<int> usedTiles{0x26, 0x34, 0x46, 0x54, 0x66, 0x74, 0x86, 0x94, 0xA6, 0xB4, 0xC6, 0xD4, 0xE6, 0xF4, 0x106, 0x114, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24};
 
     bool removedTile = true;
@@ -222,14 +223,14 @@ void specializeCircuit(const std::string& jsonFile,
         Instance* inst = instR.second;
         for (auto field : inst->getModuleRef()->getType()->getFields()) {
           if (field == "tile_id") {
-            cout << inst->toString() << " has tile id field" << endl;
+            //cout << inst->toString() << " has tile id field" << endl;
             Select* s = inst->sel(field);
 
             vector<Select*> values = getSignalValues(s);
             maybe<BitVec> tileId = getSignalBitVec(values);
 
             if (tileId.has_value()) {
-              cout << "Tile id == " << tileId.get_value() << endl;
+              //cout << "Tile id == " << tileId.get_value() << endl;
               int val = tileId.get_value().to_type<int>();
 
               if (!elem(val, usedTiles)) {
@@ -268,6 +269,7 @@ void specializeCircuit(const std::string& jsonFile,
   Module* topMod_conf = copyModule("topMod_config", topMod);
   c->runPasses({"add-dummy-inputs"});
 
+  cout << "# of instances in flattened circuit = " << topMod_conf->getDef()->getInstances().size() << endl;
   cout << "Writing topMod_config to verilog" << endl;
 
   // Write this out as verilog
