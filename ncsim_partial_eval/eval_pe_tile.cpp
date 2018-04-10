@@ -173,11 +173,18 @@ void runVerilogSpecializer(CoreIR::Module* const topMod_conf,
     outFile << "\t\t." << port << "(" << port << "),\n";
   }
 
+  int i = 0;
   for (auto w : regWires) {
-    outFile << "\t\t." << w.first << "_subcircuit_out(" << w.first << ")," << endl;
+    outFile << "\t\t." << w.first << "_subcircuit_out(" << w.first << ")";
+    if (i < (regWires.size() - 1)) {
+      outFile << ",";
+    }
+    outFile << endl;
+
+    i++;
   }
 
-  outFile << "\t\t.tile_id(tile_id)\n" << endl;
+  //outFile << "\t\t.tile_id(tile_id)\n" << endl;
   outFile << "\t);" << endl;
 
   outFile << "endmodule" << endl;
