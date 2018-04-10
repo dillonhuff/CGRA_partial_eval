@@ -229,7 +229,11 @@ void specializeCircuit(const std::string& jsonFile,
       for (auto instR : topMod->getDef()->getInstances()) {
         Instance* inst = instR.second;
         for (auto field : inst->getModuleRef()->getType()->getFields()) {
-          if (field == "tile_id") {
+
+          // Dont remove IO tiles yet!
+          if (((inst->getModuleRef()->getName() == "pe_tile_new_unq1") ||
+               (inst->getModuleRef()->getName() == "memory_tile_unq1"))
+              && (field == "tile_id")) {
             //cout << inst->toString() << " has tile id field" << endl;
             Select* s = inst->sel(field);
 
@@ -261,6 +265,8 @@ void specializeCircuit(const std::string& jsonFile,
     }
   }
 
+  cout << "Done removing tiles" << endl;
+
   c->runPasses({
         //"add-register-outputs"});
 
@@ -290,7 +296,7 @@ void specializeCircuit(const std::string& jsonFile,
   // Read the register values back in
   loadSpecializedState(topMod, fixedPorts, "./config_register_values.txt");
 
-  cout << "# of instances in top before after folding constants = " << topMod->getDef()->getInstances().size() << endl;  
+  cout << "# of instances in top before folding constants = " << topMod->getDef()->getInstances().size() << endl;  
 
   c->runPasses({"fold-constants", "packconnections"});
   c->runPasses({"deletedeadinstances"});
