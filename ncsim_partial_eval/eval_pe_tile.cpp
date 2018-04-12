@@ -366,7 +366,7 @@ int main() {
   //                   "mul_2_cgra.json");
   
   // Specialize the PE tile
-  vector<string> portsToConnect{"clk_in", "reset", "config_addr", "config_data"};
+  vector<string> portsToConnect{"clk_in", "reset", "config_addr", "config_data", "tile_id"};
 
   map<string, BitVec> fixedPorts(
                                  {
