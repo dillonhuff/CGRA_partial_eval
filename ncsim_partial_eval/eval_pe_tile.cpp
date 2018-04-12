@@ -123,7 +123,9 @@ bool allDriversFrom(CoreIR::Select* const sel,
 
 void runVerilogSpecializer(CoreIR::Module* const topMod_conf,
                            const std::vector<std::string>& portsToConnect,
-                           const std::string& testStub) {
+                           const std::string& testStubFileStart,
+                           const std::string& bitStreamFile,
+                           const std::string& testStubFileEnd) {
   // Start of verilog testbench run
   cout << "Saving to verilog" << endl;
   int verilog_convert = system("coreir -i topMod_config.json -o topMod_config.v > verilog_conversion_log.txt");
@@ -132,12 +134,18 @@ void runVerilogSpecializer(CoreIR::Module* const topMod_conf,
 
   // Write out the verilog main
   cout << "Writing out to verilator" << endl;
-  std::ifstream t(testStub);
+  std::ifstream t(testStubFileStart);
   std::string ts((std::istreambuf_iterator<char>(t)),
                  std::istreambuf_iterator<char>());
 
   ofstream outFile("specialize_test.v");
   outFile << ts << endl;
+  outFile << "\"" << bitStreamFile << "\"" << ", \"r\");" << endl;
+  
+  std::ifstream et(testStubFileEnd);
+  std::string es((std::istreambuf_iterator<char>(et)),
+                 std::istreambuf_iterator<char>());
+  outFile << es << endl;
 
   map<string, int> regWires;
   for (auto instR : topMod_conf->getDef()->getInstances()) {
@@ -203,7 +211,9 @@ void runVerilogSpecializer(CoreIR::Module* const topMod_conf,
 }
 
 void specializeCircuit(const std::string& jsonFile,
-                       const std::string& testStubFile,
+                       const std::string& testStubFileStart,
+                       const std::string& bitStreamFile,
+                       const std::string& testStubFileEnd,
                        map<string, BitVec>& fixedPorts,
                        const vector<std::string>& portsToConnect,
                        const std::string& moduleToSpecialize,
@@ -291,7 +301,11 @@ void specializeCircuit(const std::string& jsonFile,
     c->die();
   }
 
-  runVerilogSpecializer(topMod_conf, portsToConnect, testStubFile);
+  runVerilogSpecializer(topMod_conf,
+                        portsToConnect,
+                        testStubFileStart,
+                        bitStreamFile,
+                        testStubFileEnd);
 
   // Read the register values back in
   loadSpecializedState(topMod, fixedPorts, "./config_register_values.txt");
@@ -323,24 +337,27 @@ void runSpecializedPETests() {
 
 int main() {
 
-  // // Specialize the whole cgra
-  vector<string> cgraPorts{"clk_in", "reset_in", "config_addr_in", "config_data_in"};
+  // // // Specialize the whole cgra
+  // vector<string> cgraPorts{"clk_in", "reset_in", "config_addr_in", "config_data_in"};
 
-  map<string, BitVec> cgraFixedPorts(
-                                 {
-                                     {"config_addr_in", BitVec(32, 0)},
-                                       {"config_data_in", BitVec(32, 0)},
-                                         {"reset_in", BitVec(1, 0)}
-                                 }
-                                 );
+  // map<string, BitVec> cgraFixedPorts(
+  //                                {
+  //                                    {"config_addr_in", BitVec(32, 0)},
+  //                                      {"config_data_in", BitVec(32, 0)},
+  //                                        {"reset_in", BitVec(1, 0)}
+  //                                }
+  //                                );
   
-  
-  specializeCircuit("/Users/dillon/CoreIRWorkspace/CGRA_coreir/top.json",
-                    "cgra_test_stub.v",
-                    cgraFixedPorts,
-                    cgraPorts,
-                    "top",
-                    "mul_2_cgra.json");
+  // // To increase speed I really ought to flatten first and then specialize for
+  // // each of a list of bitstreams. How to do this with the cgra_test_stub?
+  // specializeCircuit("/Users/dillon/CoreIRWorkspace/CGRA_coreir/top.json",
+  //                   "cgra_test_stub_pre.v",
+  //                   "./pw2_16x16_only_config_lines.bsa",
+  //                   "cgra_test_stub_post.v",
+  //                   cgraFixedPorts,
+  //                   cgraPorts,
+  //                   "top",
+  //                   "mul_2_cgra.json");
   
   // Specialize the PE tile
   vector<string> portsToConnect{"clk_in", "reset", "config_addr", "config_data"};
@@ -356,7 +373,9 @@ int main() {
   
   
   specializeCircuit("pe_hwmaster_03_20_2018.json",
-                    "verilog_test_stub.v",
+                    "verilog_test_stub_start.v",
+                    "./pw2_16x16_only_config_lines.bsa",
+                    "verilog_test_stub_end.v",
                     fixedPorts,
                     portsToConnect,
                     "pe_tile_new_unq1",
