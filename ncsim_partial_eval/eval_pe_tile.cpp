@@ -134,24 +134,24 @@ void runVerilogSpecializer(CoreIR::Module* const topMod_conf,
 
   // Write out the verilog main
   cout << "Writing out to verilator" << endl;
-  std::ifstream t("verilog_test_stub.v");
-  std::string ts((std::istreambuf_iterator<char>(t)),
-                 std::istreambuf_iterator<char>());
-
-  // cout << "Writing out to verilator" << endl;
-  // std::ifstream t(testStubFileStart);
+  // std::ifstream t("verilog_test_stub.v");
   // std::string ts((std::istreambuf_iterator<char>(t)),
   //                std::istreambuf_iterator<char>());
+
+  cout << "Writing out to verilator" << endl;
+  std::ifstream t(testStubFileStart);
+  std::string ts((std::istreambuf_iterator<char>(t)),
+                 std::istreambuf_iterator<char>());
 
   ofstream outFile("specialize_test.v");
   outFile << ts << endl;
 
-  //outFile << "\"" << bitStreamFile << "\"" << ", \"r\");" << endl;
+  outFile << "\"" << bitStreamFile << "\"" << ", \"r\");" << endl;
   
-  // std::ifstream et(testStubFileEnd);
-  // std::string es((std::istreambuf_iterator<char>(et)),
-  //                std::istreambuf_iterator<char>());
-  // outFile << es << endl;
+  std::ifstream et(testStubFileEnd);
+  std::string es((std::istreambuf_iterator<char>(et)),
+                 std::istreambuf_iterator<char>());
+  outFile << es << endl;
 
   map<string, int> regWires;
   for (auto instR : topMod_conf->getDef()->getInstances()) {
