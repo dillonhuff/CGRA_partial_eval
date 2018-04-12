@@ -131,6 +131,9 @@ void runVerilogSpecializer(CoreIR::Module* const topMod_conf,
   assert(verilog_convert == 0);
 
   // Write out the verilog main
+
+  std::string configBitstream = "./pw2_16x16_only_config_lines.bsa";
+
   cout << "Writing out to verilator" << endl;
   std::ifstream t(testStub);
   std::string ts((std::istreambuf_iterator<char>(t)),
@@ -327,7 +330,6 @@ void runSpecializedPETests() {
 
 int main() {
 
-<<<<<<< HEAD
   // Specialize the whole cgra
     vector<string> cgraPorts{"clk_in", "reset_in", "config_addr_in", "config_data_in"};
 
@@ -338,27 +340,6 @@ int main() {
                                            {"reset_in", BitVec(1, 0)}
                                    }
                                    );
-  
-=======
-  // // Specialize the whole cgra
-  vector<string> cgraPorts{"clk_in", "reset_in", "config_addr_in", "config_data_in"};
-
-  map<string, BitVec> cgraFixedPorts(
-                                 {
-                                     {"config_addr_in", BitVec(32, 0)},
-                                       {"config_data_in", BitVec(32, 0)},
-                                         {"reset_in", BitVec(1, 0)}
-                                 }
-                                 );
-  
-  
-  specializeCircuit("/Users/dillon/CoreIRWorkspace/CGRA_coreir/top.json",
-                    "cgra_test_stub.v",
-                    cgraFixedPorts,
-                    cgraPorts,
-                    "top",
-                    "mul_2_cgra.json");
->>>>>>> origin/master
   
     specializeCircuit("../../CGRA_coreir/top.json",
                       "cgra_verilog_test_stub.v",
