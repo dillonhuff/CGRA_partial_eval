@@ -344,26 +344,26 @@ void runSpecializedPETests() {
 int main() {
 
   // // // Specialize the whole cgra
-  // vector<string> cgraPorts{"clk_in", "reset_in", "config_addr_in", "config_data_in"};
+  vector<string> cgraPorts{"clk_in", "reset_in", "config_addr_in", "config_data_in"};
 
-  // map<string, BitVec> cgraFixedPorts(
-  //                                {
-  //                                    {"config_addr_in", BitVec(32, 0)},
-  //                                      {"config_data_in", BitVec(32, 0)},
-  //                                        {"reset_in", BitVec(1, 0)}
-  //                                }
-  //                                );
+  map<string, BitVec> cgraFixedPorts(
+                                 {
+                                     {"config_addr_in", BitVec(32, 0)},
+                                       {"config_data_in", BitVec(32, 0)},
+                                         {"reset_in", BitVec(1, 0)}
+                                 }
+                                 );
   
-  // // To increase speed I really ought to flatten first and then specialize for
-  // // each of a list of bitstreams. How to do this with the cgra_test_stub?
-  // specializeCircuit("/Users/dillon/CoreIRWorkspace/CGRA_coreir/top.json",
-  //                   "cgra_test_stub_pre.v",
-  //                   "./pw2_16x16_only_config_lines.bsa",
-  //                   "cgra_test_stub_post.v",
-  //                   cgraFixedPorts,
-  //                   cgraPorts,
-  //                   "top",
-  //                   "mul_2_cgra.json");
+  // To increase speed I really ought to flatten first and then specialize for
+  // each of a list of bitstreams. How to do this with the cgra_test_stub?
+  specializeCircuit("/Users/dillon/CoreIRWorkspace/CGRA_coreir/top.json",
+                    "cgra_test_stub_pre.v",
+                    "./pw2_16x16_only_config_lines.bsa",
+                    "cgra_test_stub_post.v",
+                    cgraFixedPorts,
+                    cgraPorts,
+                    "top",
+                    "mul_2_cgra.json");
   
   // Specialize the PE tile
   vector<string> portsToConnect{"clk_in", "reset", "config_addr", "config_data", "tile_id"};
