@@ -358,13 +358,22 @@ int main() {
   // each of a list of bitstreams. How to do this with the cgra_test_stub?
   specializeCircuit("/Users/dillon/CoreIRWorkspace/CGRA_coreir/top.json",
                     "cgra_test_stub_pre.v",
+                    "./conv_2_1.bs",
+                    "cgra_test_stub_post.v",
+                    cgraFixedPorts,
+                    cgraPorts,
+                    "top",
+                    "conv_2_1_cgra.json");
+
+  specializeCircuit("/Users/dillon/CoreIRWorkspace/CGRA_coreir/top.json",
+                    "cgra_test_stub_pre.v",
                     "./pw2_16x16_only_config_lines.bsa",
                     "cgra_test_stub_post.v",
                     cgraFixedPorts,
                     cgraPorts,
                     "top",
                     "mul_2_cgra.json");
-  
+
   // Specialize the PE tile
   vector<string> portsToConnect{"clk_in", "reset", "config_addr", "config_data", "tile_id"};
 
