@@ -342,6 +342,10 @@ void runSpecializedPETests() {
   int verilator_res = system("make verilog_res");
 
   assert(verilator_res == 0);
+
+}
+
+void runSpecializedCGRATests() {
 }
 
 int main() {
@@ -403,4 +407,6 @@ int main() {
                     cgraPorts,
                     "top",
                     "mul_2_cgra.json");
+
+  runSpecializedCGRATests();
 }
