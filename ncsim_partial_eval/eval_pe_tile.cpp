@@ -11,6 +11,18 @@
 using namespace CoreIR;
 using namespace std;
 
+void createRegisterValuesFileWithIVerilog() {
+  cout << "Running iverilog" << endl;
+
+  int res = system("iverilog -o test_conf specialize_test.v topMod_config.v");
+
+  assert(res == 0);
+
+  res = system("vvp test_conf > config_register_values.txt;");
+
+  assert(res == 0);
+}
+
 Module* copyModule(const std::string& copyName,
                    CoreIR::Module* const topMod) {
 
@@ -63,7 +75,6 @@ void loadSpecializedState(CoreIR::Module* const topMod,
                           const std::string& register_value_file) {
   auto c = topMod->getContext();
   
-  //std::ifstream rv("./config_register_values.txt");
   std::ifstream rv(register_value_file);
   std::string regVals((std::istreambuf_iterator<char>(rv)),
                       std::istreambuf_iterator<char>());
@@ -205,15 +216,7 @@ void runVerilogSpecializer(CoreIR::Module* const topMod_conf,
 
   outFile.close();
 
-  cout << "Running iverilog" << endl;
-
-  int res = system("iverilog -o test_conf specialize_test.v topMod_config.v");
-
-  assert(res == 0);
-
-  res = system("vvp test_conf > config_register_values.txt;");
-
-  assert(res == 0);
+  createRegisterValuesFileWithIVerilog();
 }
 
 void specializeCircuit(const std::string& jsonFile,
@@ -343,36 +346,6 @@ void runSpecializedPETests() {
 
 int main() {
 
-  // // // Specialize the whole cgra
-  vector<string> cgraPorts{"clk_in", "reset_in", "config_addr_in", "config_data_in"};
-
-  map<string, BitVec> cgraFixedPorts(
-                                 {
-                                     {"config_addr_in", BitVec(32, 0)},
-                                       {"config_data_in", BitVec(32, 0)},
-                                         {"reset_in", BitVec(1, 0)}
-                                 }
-                                 );
-  
-  // To increase speed I really ought to flatten first and then specialize for
-  // each of a list of bitstreams. How to do this with the cgra_test_stub?
-  specializeCircuit("/Users/dillon/CoreIRWorkspace/CGRA_coreir/top.json",
-                    "cgra_test_stub_pre.v",
-                    "./conv_2_1.bs",
-                    "cgra_test_stub_post.v",
-                    cgraFixedPorts,
-                    cgraPorts,
-                    "top",
-                    "conv_2_1_cgra.json");
-
-  specializeCircuit("/Users/dillon/CoreIRWorkspace/CGRA_coreir/top.json",
-                    "cgra_test_stub_pre.v",
-                    "./pw2_16x16_only_config_lines.bsa",
-                    "cgra_test_stub_post.v",
-                    cgraFixedPorts,
-                    cgraPorts,
-                    "top",
-                    "mul_2_cgra.json");
 
   // Specialize the PE tile
   vector<string> portsToConnect{"clk_in", "reset", "config_addr", "config_data", "tile_id"};
@@ -397,4 +370,37 @@ int main() {
                     "mul_2_pe.json");
 
   runSpecializedPETests();
+  
+  // // // Specialize the whole cgra
+  vector<string> cgraPorts{"clk_in", "reset_in", "config_addr_in", "config_data_in"};
+
+  map<string, BitVec> cgraFixedPorts(
+                                 {
+                                     {"config_addr_in", BitVec(32, 0)},
+                                       {"config_data_in", BitVec(32, 0)},
+                                         {"reset_in", BitVec(1, 0)}
+                                 }
+                                 );
+  
+  // To increase speed I really ought to flatten first and then specialize for
+  // each of a list of bitstreams. How to do this with the cgra_test_stub?
+  specializeCircuit("/Users/dillon/CoreIRWorkspace/CGRA_coreir/top.json",
+                    "cgra_test_stub_pre.v",
+                    "./conv_2_1.bs",
+                    "cgra_test_stub_post.v",
+                    cgraFixedPorts,
+                    cgraPorts,
+                    "top",
+                    "conv_2_1_cgra.json");
+
+  cout << "Done specializing cgra for conv_2_1" << endl;
+
+  specializeCircuit("/Users/dillon/CoreIRWorkspace/CGRA_coreir/top.json",
+                    "cgra_test_stub_pre.v",
+                    "./pw2_16x16_only_config_lines.bsa",
+                    "cgra_test_stub_post.v",
+                    cgraFixedPorts,
+                    cgraPorts,
+                    "top",
+                    "mul_2_cgra.json");
 }
