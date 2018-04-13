@@ -239,7 +239,32 @@ void specializeCircuit(const std::string& jsonFile,
   // better
   if (topMod->getName() == "top") {
     // To be slightly less hacky this should be built by scanning the bitstream
-    vector<int> usedTiles{0x26, 0x34, 0x46, 0x54, 0x66, 0x74, 0x86, 0x94, 0xA6, 0xB4, 0xC6, 0xD4, 0xE6, 0xF4, 0x106, 0x114, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24};
+    // vector<int> usedTiles{0x26, 0x34, 0x46, 0x54, 0x66, 0x74, 0x86, 0x94, 0xA6, 0xB4, 0xC6, 0xD4, 0xE6, 0xF4, 0x106, 0x114, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24};
+
+    vector<int> usedTiles;
+
+    
+    std::string line;
+    std::ifstream infile(bitStreamFile);
+    while (std::getline(infile, line)) {
+      std::istringstream iss(line);
+      string addr, b;
+      if (!(iss >> addr >> b)) { break; } // error
+
+      cout << "addr = " << addr << endl;
+      cout << "data = " << b << endl;
+      // process pair (a,b)
+
+      string tileAddr = addr.substr(6);
+      assert(tileAddr.size() == 2);
+
+      cout << "tileAddr = " << tileAddr << endl;
+      unsigned int x;
+      std::stringstream ss;
+      ss << std::hex << tileAddr;
+      ss >> x;
+      usedTiles.push_back(x);
+    }
 
     bool removedTile = true;
     while (removedTile) {
