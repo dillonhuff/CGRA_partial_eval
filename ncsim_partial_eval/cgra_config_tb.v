@@ -157,6 +157,74 @@ module cgra_config_tb();
    wire  pad_S3_T14_in;
    wire  pad_S3_T15_in;
 
+   wire  pad_S0_T0_out;
+   wire  pad_S0_T1_out;
+   wire  pad_S0_T2_out;
+   wire  pad_S0_T3_out;
+   wire  pad_S0_T4_out;
+   wire  pad_S0_T5_out;
+   wire  pad_S0_T6_out;
+   wire  pad_S0_T7_out;
+   wire  pad_S0_T8_out;
+   wire  pad_S0_T9_out;
+   wire  pad_S0_T10_out;
+   wire  pad_S0_T11_out;
+   wire  pad_S0_T12_out;
+   wire  pad_S0_T13_out;
+   wire  pad_S0_T14_out;
+   wire  pad_S0_T15_out;
+
+   wire  pad_S1_T0_out;
+   wire  pad_S1_T1_out;
+   wire  pad_S1_T2_out;
+   wire  pad_S1_T3_out;
+   wire  pad_S1_T4_out;
+   wire  pad_S1_T5_out;
+   wire  pad_S1_T6_out;
+   wire  pad_S1_T7_out;
+   wire  pad_S1_T8_out;
+   wire  pad_S1_T9_out;
+   wire  pad_S1_T10_out;
+   wire  pad_S1_T11_out;
+   wire  pad_S1_T12_out;
+   wire  pad_S1_T13_out;
+   wire  pad_S1_T14_out;
+   wire  pad_S1_T15_out;
+
+   wire  pad_S2_T0_out;
+   wire  pad_S2_T1_out;
+   wire  pad_S2_T2_out;
+   wire  pad_S2_T3_out;
+   wire  pad_S2_T4_out;
+   wire  pad_S2_T5_out;
+   wire  pad_S2_T6_out;
+   wire  pad_S2_T7_out;
+   wire  pad_S2_T8_out;
+   wire  pad_S2_T9_out;
+   wire  pad_S2_T10_out;
+   wire  pad_S2_T11_out;
+   wire  pad_S2_T12_out;
+   wire  pad_S2_T13_out;
+   wire  pad_S2_T14_out;
+   wire  pad_S2_T15_out;
+
+   wire  pad_S3_T0_out;
+   wire  pad_S3_T1_out;
+   wire  pad_S3_T2_out;
+   wire  pad_S3_T3_out;
+   wire  pad_S3_T4_out;
+   wire  pad_S3_T5_out;
+   wire  pad_S3_T6_out;
+   wire  pad_S3_T7_out;
+   wire  pad_S3_T8_out;
+   wire  pad_S3_T9_out;
+   wire  pad_S3_T10_out;
+   wire  pad_S3_T11_out;
+   wire  pad_S3_T12_out;
+   wire  pad_S3_T13_out;
+   wire  pad_S3_T14_out;
+   wire  pad_S3_T15_out;
+   
    // Maybe it should go 15 down to 0? Not sure how the chip inputs are wired
    assign {pad_S0_T0_in,
            pad_S0_T1_in,
@@ -369,7 +437,75 @@ module cgra_config_tb();
             .pad_S3_T12_in(pad_S3_T12_in),
             .pad_S3_T13_in(pad_S3_T13_in),
             .pad_S3_T14_in(pad_S3_T14_in),
-            .pad_S3_T15_in(pad_S3_T15_in)
+            .pad_S3_T15_in(pad_S3_T15_in),
+
+            .pad_S0_T0_out(pad_S0_T0_out),
+            .pad_S0_T1_out(pad_S0_T1_out),
+            .pad_S0_T2_out(pad_S0_T2_out),
+            .pad_S0_T3_out(pad_S0_T3_out),
+            .pad_S0_T4_out(pad_S0_T4_out),
+            .pad_S0_T5_out(pad_S0_T5_out),
+            .pad_S0_T6_out(pad_S0_T6_out),
+            .pad_S0_T7_out(pad_S0_T7_out),
+            .pad_S0_T8_out(pad_S0_T8_out),
+            .pad_S0_T9_out(pad_S0_T9_out),
+            .pad_S0_T10_out(pad_S0_T10_out),
+            .pad_S0_T11_out(pad_S0_T11_out),
+            .pad_S0_T12_out(pad_S0_T12_out),
+            .pad_S0_T13_out(pad_S0_T13_out),
+            .pad_S0_T14_out(pad_S0_T14_out),
+            .pad_S0_T15_out(pad_S0_T15_out),
+
+            .pad_S1_T0_out(pad_S1_T0_out),
+            .pad_S1_T1_out(pad_S1_T1_out),
+            .pad_S1_T2_out(pad_S1_T2_out),
+            .pad_S1_T3_out(pad_S1_T3_out),
+            .pad_S1_T4_out(pad_S1_T4_out),
+            .pad_S1_T5_out(pad_S1_T5_out),
+            .pad_S1_T6_out(pad_S1_T6_out),
+            .pad_S1_T7_out(pad_S1_T7_out),
+            .pad_S1_T8_out(pad_S1_T8_out),
+            .pad_S1_T9_out(pad_S1_T9_out),
+            .pad_S1_T10_out(pad_S1_T10_out),
+            .pad_S1_T11_out(pad_S1_T11_out),
+            .pad_S1_T12_out(pad_S1_T12_out),
+            .pad_S1_T13_out(pad_S1_T13_out),
+            .pad_S1_T14_out(pad_S1_T14_out),
+            .pad_S1_T15_out(pad_S1_T15_out),
+
+            .pad_S2_T0_out(pad_S2_T0_out),
+            .pad_S2_T1_out(pad_S2_T1_out),
+            .pad_S2_T2_out(pad_S2_T2_out),
+            .pad_S2_T3_out(pad_S2_T3_out),
+            .pad_S2_T4_out(pad_S2_T4_out),
+            .pad_S2_T5_out(pad_S2_T5_out),
+            .pad_S2_T6_out(pad_S2_T6_out),
+            .pad_S2_T7_out(pad_S2_T7_out),
+            .pad_S2_T8_out(pad_S2_T8_out),
+            .pad_S2_T9_out(pad_S2_T9_out),
+            .pad_S2_T10_out(pad_S2_T10_out),
+            .pad_S2_T11_out(pad_S2_T11_out),
+            .pad_S2_T12_out(pad_S2_T12_out),
+            .pad_S2_T13_out(pad_S2_T13_out),
+            .pad_S2_T14_out(pad_S2_T14_out),
+            .pad_S2_T15_out(pad_S2_T15_out),
+
+            .pad_S3_T0_out(pad_S3_T0_out),
+            .pad_S3_T1_out(pad_S3_T1_out),
+            .pad_S3_T2_out(pad_S3_T2_out),
+            .pad_S3_T3_out(pad_S3_T3_out),
+            .pad_S3_T4_out(pad_S3_T4_out),
+            .pad_S3_T5_out(pad_S3_T5_out),
+            .pad_S3_T6_out(pad_S3_T6_out),
+            .pad_S3_T7_out(pad_S3_T7_out),
+            .pad_S3_T8_out(pad_S3_T8_out),
+            .pad_S3_T9_out(pad_S3_T9_out),
+            .pad_S3_T10_out(pad_S3_T10_out),
+            .pad_S3_T11_out(pad_S3_T11_out),
+            .pad_S3_T12_out(pad_S3_T12_out),
+            .pad_S3_T13_out(pad_S3_T13_out),
+            .pad_S3_T14_out(pad_S3_T14_out),
+            .pad_S3_T15_out(pad_S3_T15_out)
             
             );
    
