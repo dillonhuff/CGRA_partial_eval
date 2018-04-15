@@ -382,7 +382,7 @@ int main() {
 
   specializeCircuit("./memory_tile_04_14_2018.json",
                     "mem_tile_test_stub_start.v",
-                    "./conv_2_1.vs",
+                    "./conv_2_1.bs",
                     "mem_tile_test_stub_end.v",
                     memTileFixedPorts,
                     memTilePortsToConnect,
