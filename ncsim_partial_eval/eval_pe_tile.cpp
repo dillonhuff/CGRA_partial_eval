@@ -400,8 +400,12 @@ int main() {
                     "mul_2_pe.json");
 
   runSpecializedPETests();
+
+  // Specialize the memory tile
+  cout << "Need to specialize the memory tile here" << endl;
+  assert(false);
   
-  // // // Specialize the whole cgra
+  // Specialize the whole cgra
   vector<string> cgraPorts{"clk_in", "reset_in", "config_addr_in", "config_data_in"};
 
   map<string, BitVec> cgraFixedPorts(
