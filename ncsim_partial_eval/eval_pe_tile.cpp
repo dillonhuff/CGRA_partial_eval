@@ -143,12 +143,6 @@ void runVerilogSpecializer(CoreIR::Module* const topMod_conf,
 
   assert(verilog_convert == 0);
 
-  // Write out the verilog main
-  cout << "Writing out to verilator" << endl;
-  // std::ifstream t("verilog_test_stub.v");
-  // std::string ts((std::istreambuf_iterator<char>(t)),
-  //                std::istreambuf_iterator<char>());
-
   cout << "Writing out to verilator" << endl;
   std::ifstream t(testStubFileStart);
   std::string ts((std::istreambuf_iterator<char>(t)),
@@ -238,11 +232,7 @@ void specializeCircuit(const std::string& jsonFile,
   // NOTE: This is a hack. Please remove later when coreir optimizations are
   // better
   if (topMod->getName() == "top") {
-    // To be slightly less hacky this should be built by scanning the bitstream
-    // vector<int> usedTiles{0x26, 0x34, 0x46, 0x54, 0x66, 0x74, 0x86, 0x94, 0xA6, 0xB4, 0xC6, 0xD4, 0xE6, 0xF4, 0x106, 0x114, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24};
-
     vector<int> usedTiles;
-
     
     std::string line;
     std::ifstream infile(bitStreamFile);
@@ -376,7 +366,31 @@ void runSpecializedCGRATests() {
 
 int main() {
 
+  // Specialize the memory tile
+  cout << "Need to specialize the memory tile here" << endl;
 
+  vector<string> memTilePortsToConnect{"clk_in", "reset", "config_addr", "config_data", "tile_id"};
+
+  map<string, BitVec> memTileFixedPorts(
+                                 {
+                                   {"tile_id", BitVec(16, 1)},
+                                     {"config_addr", BitVec(32, 0)},
+                                       {"config_data", BitVec(32, 0)},
+                                         {"reset", BitVec(1, 0)}
+                                 }
+                                 );
+
+  specializeCircuit("./memory_tile_04_14_2018.json",
+                    "mem_tile_test_stub_start.v",
+                    "./conv_2_1.vs",
+                    "mem_tile_test_stub_end.v",
+                    memTileFixedPorts,
+                    memTilePortsToConnect,
+                    "memory_tile_unq1",
+                    "mem_tile_conv_2_1.json");
+
+  assert(false);
+  
   // Specialize the PE tile
   vector<string> portsToConnect{"clk_in", "reset", "config_addr", "config_data", "tile_id"};
 
@@ -401,10 +415,6 @@ int main() {
 
   runSpecializedPETests();
 
-  // Specialize the memory tile
-  cout << "Need to specialize the memory tile here" << endl;
-  assert(false);
-  
   // Specialize the whole cgra
   vector<string> cgraPorts{"clk_in", "reset_in", "config_addr_in", "config_data_in"};
 
