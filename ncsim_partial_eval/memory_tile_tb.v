@@ -187,17 +187,21 @@ module test();
                         .in_1_BUS16_0_2(in_1_BUS16_0_2),
                         .in_1_BUS16_0_3(in_1_BUS16_0_3),
                         .in_1_BUS16_0_4(in_1_BUS16_0_4),
-                        .in_1_BUS16_2_0(in_1_BUS16_2_0),
-                        .in_1_BUS16_2_1(in_1_BUS16_2_1),
-                        .in_1_BUS16_2_2(in_1_BUS16_2_2),
-                        .in_1_BUS16_2_3(in_1_BUS16_2_3),
-                        .in_1_BUS16_2_4(in_1_BUS16_2_4),
+
                         .in_1_BUS16_1_0(in_1_BUS16_1_0),
                         .in_1_BUS16_1_1(in_1_BUS16_1_1),
                         .in_1_BUS16_1_2(in_1_BUS16_1_2),
                         .in_1_BUS16_1_3(in_1_BUS16_1_3),
                         .in_1_BUS16_1_4(in_1_BUS16_1_4),
-                        
+
+                        .in_1_BUS16_2_0(in_1_BUS16_2_0),
+                        .in_1_BUS16_2_1(in_1_BUS16_2_1),
+                        .in_1_BUS16_2_2(in_1_BUS16_2_2),
+                        .in_1_BUS16_2_3(in_1_BUS16_2_3),
+                        .in_1_BUS16_2_4(in_1_BUS16_2_4),
+
+                        .read_data(read_data),
+
                         .clk_in(clk_in),
                         .reset(rst_in));
    
