@@ -336,9 +336,8 @@ void specializeCircuit(const std::string& jsonFile,
 
   cout << "# of instances in top before folding constants = " << topMod->getDef()->getInstances().size() << endl;  
 
-  //c->runPasses({"fold-constants", "packconnections"});
   c->runPasses({"packconnections"});
-  c->runPasses({"deletedeadinstances"});
+  c->runPasses({"deletedeadinstances", "removeconstduplicates"});
 
   cout << "# of instances in top after folding constants = " << topMod->getDef()->getInstances().size() << endl;
 
